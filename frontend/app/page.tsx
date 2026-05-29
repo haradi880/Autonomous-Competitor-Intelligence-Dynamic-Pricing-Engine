@@ -24,14 +24,22 @@ const initialState: DashboardState = {
 export default function DashboardPage() {
   const [state, setState] = useState<DashboardState>(initialState);
   const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
   const [query, setQuery] = useState("");
 
   async function refresh(): Promise<void> {
     try {
+      setLoading(true);
       setState(await fetchDashboard());
       setError(null);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Unknown dashboard error");
+      setError(
+        err instanceof Error
+          ? `${err.message}. If Render is waking from sleep, wait a few seconds and refresh.`
+          : "Unknown dashboard error"
+      );
+    } finally {
+      setLoading(false);
     }
   }
 
@@ -86,7 +94,11 @@ export default function DashboardPage() {
         <div className="space-y-5">
           <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
             <p className="text-sm text-ink/65">
-              {state.products.length} products monitored - {state.settings.autopilot ? "autonomous updates active" : "analysis only"}
+              {loading && state.products.length === 0
+                ? "Connecting to pricing engine..."
+                : `${state.products.length} products monitored - ${
+                    state.settings.autopilot ? "autonomous updates active" : "analysis only"
+                  }`}
             </p>
             <div className="flex gap-2">
               <label className="flex h-10 min-w-0 flex-1 border border-ink/15 bg-white md:w-80">
@@ -111,6 +123,11 @@ export default function DashboardPage() {
             </div>
           </div>
           {error ? <div className="border border-coral/30 bg-coral/10 px-4 py-3 text-sm text-coral">{error}</div> : null}
+          {loading && state.products.length === 0 ? (
+            <div className="border border-brass/30 bg-brass/10 px-4 py-3 text-sm text-brass">
+              Warming the hosted backend and loading Supabase dashboard data...
+            </div>
+          ) : null}
           <SubmissionChecklist />
           <ProductOnboarding onComplete={refresh} />
           <ScanPanel products={state.products} onComplete={refresh} />

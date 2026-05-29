@@ -10,8 +10,23 @@ export function apiDocsUrl(): string {
   return API_BASE.replace(/\/api\/v1\/?$/, "/docs");
 }
 
+async function fetchWithRetry(input: RequestInfo | URL, init?: RequestInit, attempts = 4): Promise<Response> {
+  let lastError: unknown;
+  for (let index = 0; index < attempts; index += 1) {
+    try {
+      const response = await fetch(input, init);
+      if (response.ok || response.status < 500) return response;
+      lastError = new Error(`Request failed: ${response.status}`);
+    } catch (error) {
+      lastError = error;
+    }
+    await new Promise((resolve) => setTimeout(resolve, 800 * (index + 1)));
+  }
+  throw lastError instanceof Error ? lastError : new Error("Network request failed");
+}
+
 export async function fetchDashboard(): Promise<DashboardState> {
-  const response = await fetch(`${API_BASE}/dashboard`, { cache: "no-store" });
+  const response = await fetchWithRetry(`${API_BASE}/dashboard`, { cache: "no-store" }, 6);
   if (!response.ok) {
     throw new Error(`Dashboard request failed: ${response.status}`);
   }
@@ -31,7 +46,7 @@ export async function updateSettings(settings: AutopilotSettings): Promise<Autop
 }
 
 export async function fetchAlerts(): Promise<AlertItem[]> {
-  const response = await fetch(`${API_BASE}/alerts`, { cache: "no-store" });
+  const response = await fetchWithRetry(`${API_BASE}/alerts`, { cache: "no-store" });
   if (!response.ok) {
     throw new Error(`Alerts request failed: ${response.status}`);
   }
