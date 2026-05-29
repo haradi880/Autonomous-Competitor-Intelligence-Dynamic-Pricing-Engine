@@ -1,4 +1,12 @@
-import type { AlertItem, AutopilotSettings, DashboardState, DashboardProduct, ScanResponse } from "./types";
+import type {
+  AgentRun,
+  AlertItem,
+  AutopilotSettings,
+  CompetitorTarget,
+  DashboardState,
+  DashboardProduct,
+  ScanResponse
+} from "./types";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8000/api/v1";
 
@@ -85,4 +93,46 @@ export async function createTrackedProduct(input: {
     throw new Error(body?.detail ?? `Product create failed: ${response.status}`);
   }
   return (await response.json()) as DashboardProduct;
+}
+
+export async function fetchCompetitorTargets(): Promise<CompetitorTarget[]> {
+  const response = await fetchWithRetry(`${API_BASE}/competitor-targets`, { cache: "no-store" });
+  if (!response.ok) {
+    throw new Error(`Competitor targets request failed: ${response.status}`);
+  }
+  return (await response.json()) as CompetitorTarget[];
+}
+
+export async function createCompetitorTarget(input: {
+  product_id: string;
+  competitor_name: string;
+  competitor_url: string;
+}): Promise<CompetitorTarget> {
+  const response = await fetch(`${API_BASE}/competitor-targets`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(input)
+  });
+  if (!response.ok) {
+    const body = (await response.json().catch(() => null)) as { detail?: string } | null;
+    throw new Error(body?.detail ?? `Competitor target create failed: ${response.status}`);
+  }
+  return (await response.json()) as CompetitorTarget;
+}
+
+export async function runCompetitorTargetScan(targetId: string): Promise<ScanResponse> {
+  const response = await fetch(`${API_BASE}/competitor-targets/${targetId}/scan`, { method: "POST" });
+  if (!response.ok) {
+    const body = (await response.json().catch(() => null)) as { detail?: string } | null;
+    throw new Error(body?.detail ?? `Target scan failed: ${response.status}`);
+  }
+  return (await response.json()) as ScanResponse;
+}
+
+export async function fetchScans(): Promise<AgentRun[]> {
+  const response = await fetchWithRetry(`${API_BASE}/scans`, { cache: "no-store" });
+  if (!response.ok) {
+    throw new Error(`Scans request failed: ${response.status}`);
+  }
+  return (await response.json()) as AgentRun[];
 }

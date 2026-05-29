@@ -26,7 +26,11 @@ const items = [
   }
 ];
 
-export function SubmissionChecklist() {
+type Props = {
+  expanded?: boolean;
+};
+
+export function SubmissionChecklist({ expanded = false }: Props) {
   return (
     <section className="border border-ink/10 bg-white">
       <div className="flex flex-col gap-3 border-b border-ink/10 px-4 py-4 md:flex-row md:items-center md:justify-between">
@@ -59,6 +63,18 @@ export function SubmissionChecklist() {
           </div>
         ))}
       </div>
+      {expanded ? (
+        <div className="grid gap-3 border-t border-ink/10 p-4 text-sm md:grid-cols-2">
+          <div className="border border-ink/10 bg-mist p-3">
+            <p className="font-semibold">Hosted Services</p>
+            <p className="mt-2 text-ink/65">Frontend runs on Vercel. Backend FastAPI docs are available from Render.</p>
+          </div>
+          <div className="border border-ink/10 bg-mist p-3">
+            <p className="font-semibold">Final Safety Step</p>
+            <p className="mt-2 text-ink/65">Rotate exposed API keys before submitting the repository and live URLs.</p>
+          </div>
+        </div>
+      ) : null}
     </section>
   );
 }

@@ -78,3 +78,35 @@ export type ScanResponse = {
   decision: PricingDecision;
   logs: string[];
 };
+
+export type CompetitorTarget = {
+  id: string;
+  product_id: string;
+  competitor_name: string;
+  competitor_url: string;
+  status: "active" | "paused";
+  last_checked_at: string | null;
+  created_at: string;
+};
+
+export type AgentRunEvent = {
+  id: string;
+  run_id: string;
+  stage: string;
+  status: "pending" | "running" | "complete" | "failed";
+  message: string;
+  created_at: string;
+};
+
+export type AgentRun = {
+  id: string;
+  target_id: string | null;
+  product_id: string;
+  competitor_name: string;
+  competitor_url: string;
+  status: "running" | "complete" | "failed";
+  error_message: string | null;
+  created_at: string;
+  completed_at: string | null;
+  events: AgentRunEvent[];
+};

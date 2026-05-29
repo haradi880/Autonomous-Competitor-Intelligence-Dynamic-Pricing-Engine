@@ -34,7 +34,14 @@ export function PriceChart({ data }: Props) {
         <div className="text-xs font-semibold text-ink/55">{data.length} checkpoints</div>
       </div>
       <div className="h-72">
-        {mounted ? (
+        {data.length === 0 ? (
+          <div className="grid h-full place-items-center border border-dashed border-ink/15 bg-mist px-4 text-center">
+            <div>
+              <p className="font-semibold text-ink">No pricing history yet</p>
+              <p className="mt-1 text-sm text-ink/60">Run a competitor scan to create the first real pricing checkpoint.</p>
+            </div>
+          </div>
+        ) : mounted ? (
           <ResponsiveContainer width="100%" height="100%">
             <LineChart data={data} margin={{ top: 10, right: 20, left: 0, bottom: 0 }}>
               <CartesianGrid stroke="#d9e1df" strokeDasharray="3 3" />
