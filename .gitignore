@@ -1,0 +1,12 @@
+.venv/
+__pycache__/
+*.py[cod]
+.env
+.env.local
+*.env.local
+.next/
+*.tsbuildinfo
+node_modules/
+dist/
+build/
+tmp_scan_site/
