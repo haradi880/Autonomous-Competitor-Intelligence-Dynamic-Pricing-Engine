@@ -1,14 +1,18 @@
 import asyncio
 import json
 import logging
+from uuid import UUID
 
 from fastapi import APIRouter, HTTPException
 from pydantic import ValidationError
 from fastapi.responses import StreamingResponse
 
 from models.schemas import (
+    AgentRun,
     AlertItem,
     AutopilotSettings,
+    CompetitorTarget,
+    CompetitorTargetIn,
     CompetitorUrlInput,
     DashboardState,
     Product,
@@ -76,17 +80,60 @@ async def create_product(payload: ProductIn) -> Product:
         return await app_state.add_product(payload)
 
 
-@router.post("/scan", response_model=ScanResponse)
-async def scan_competitor(payload: CompetitorUrlInput) -> ScanResponse:
+@router.get("/competitor-targets", response_model=list[CompetitorTarget])
+async def competitor_targets() -> list[CompetitorTarget]:
+    return await supabase_store.list_competitor_targets()
+
+
+@router.post("/competitor-targets", response_model=CompetitorTarget, status_code=201)
+async def create_competitor_target(payload: CompetitorTargetIn) -> CompetitorTarget:
+    try:
+        target = await supabase_store.create_competitor_target(payload)
+        await app_state.append_log(f"[Targets] Added {target.competitor_name} target for product {target.product_id}.")
+        return target
+    except Exception as exc:
+        logger.exception("Competitor target create failed")
+        raise HTTPException(status_code=502, detail=str(exc)) from exc
+
+
+@router.get("/scans", response_model=list[AgentRun])
+async def scans() -> list[AgentRun]:
+    return await supabase_store.list_agent_runs()
+
+
+@router.get("/scans/{run_id}", response_model=AgentRun)
+async def scan_detail(run_id: UUID) -> AgentRun:
+    run = await supabase_store.get_agent_run(run_id)
+    if run is None:
+        raise HTTPException(status_code=404, detail="Scan run not found")
+    return run
+
+
+async def _execute_scan(payload: CompetitorUrlInput, target_id: UUID | None = None) -> ScanResponse:
+    run = await supabase_store.create_agent_run(
+        product_id=payload.product_id,
+        competitor_name=payload.competitor_name,
+        competitor_url=str(payload.competitor_url),
+        target_id=target_id,
+    )
     try:
         await app_state.append_log(f"[Graph] Started scan for {payload.competitor_url}.")
         response = await run_pricing_graph(payload)
         for entry in response.logs:
             await app_state.append_log(entry)
+            if run is not None:
+                await supabase_store.append_agent_run_event(run.id, entry)
+        if run is not None:
+            await supabase_store.complete_agent_run(run.id, "complete")
+        if target_id is not None:
+            await supabase_store.touch_competitor_target(target_id)
         return response
     except ValidationError as exc:
         logger.exception("Competitor scan produced invalid structured product data")
         await app_state.append_log(f"[Error] Product extraction failed validation: {exc}")
+        if run is not None:
+            await supabase_store.append_agent_run_event(run.id, f"[Error] Product extraction failed validation: {exc}", "failed")
+            await supabase_store.complete_agent_run(run.id, "failed", "The URL was reachable, but it did not contain a valid product price/spec page.")
         raise HTTPException(
             status_code=422,
             detail="The URL was reachable, but it did not contain a valid product price/spec page.",
@@ -94,7 +141,30 @@ async def scan_competitor(payload: CompetitorUrlInput) -> ScanResponse:
     except Exception as exc:
         logger.exception("Competitor scan failed")
         await app_state.append_log(f"[Error] {exc}")
+        if run is not None:
+            await supabase_store.append_agent_run_event(run.id, f"[Error] {exc}", "failed")
+            await supabase_store.complete_agent_run(run.id, "failed", str(exc))
         raise HTTPException(status_code=502, detail=str(exc)) from exc
+
+
+@router.post("/scan", response_model=ScanResponse)
+async def scan_competitor(payload: CompetitorUrlInput) -> ScanResponse:
+    return await _execute_scan(payload)
+
+
+@router.post("/competitor-targets/{target_id}/scan", response_model=ScanResponse)
+async def scan_competitor_target(target_id: UUID) -> ScanResponse:
+    target = await supabase_store.get_competitor_target(target_id)
+    if target is None:
+        raise HTTPException(status_code=404, detail="Competitor target not found")
+    return await _execute_scan(
+        CompetitorUrlInput(
+            product_id=target.product_id,
+            competitor_name=target.competitor_name,
+            competitor_url=target.competitor_url,
+        ),
+        target_id=target.id,
+    )
 
 
 @router.get("/logs/stream")

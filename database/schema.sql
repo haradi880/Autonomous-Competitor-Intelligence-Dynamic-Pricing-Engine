@@ -47,6 +47,58 @@ create policy "competitor_products_read"
   on competitor_products for select
   using (true);
 
+create table if not exists competitor_targets (
+  id uuid primary key default uuid_generate_v4(),
+  product_id uuid not null references tracked_products(id) on delete cascade,
+  competitor_name text not null,
+  competitor_url text not null,
+  status text not null default 'active' check (status in ('active', 'paused')),
+  last_checked_at timestamp with time zone,
+  created_at timestamp with time zone not null default now()
+);
+
+alter table competitor_targets enable row level security;
+
+drop policy if exists "competitor_targets_read" on competitor_targets;
+create policy "competitor_targets_read"
+  on competitor_targets for select
+  using (true);
+
+create table if not exists agent_runs (
+  id uuid primary key default uuid_generate_v4(),
+  target_id uuid references competitor_targets(id) on delete set null,
+  product_id uuid not null references tracked_products(id) on delete cascade,
+  competitor_name text not null,
+  competitor_url text not null,
+  status text not null default 'running' check (status in ('running', 'complete', 'failed')),
+  error_message text,
+  created_at timestamp with time zone not null default now(),
+  completed_at timestamp with time zone
+);
+
+alter table agent_runs enable row level security;
+
+drop policy if exists "agent_runs_read" on agent_runs;
+create policy "agent_runs_read"
+  on agent_runs for select
+  using (true);
+
+create table if not exists agent_run_events (
+  id uuid primary key default uuid_generate_v4(),
+  run_id uuid not null references agent_runs(id) on delete cascade,
+  stage text not null,
+  status text not null default 'complete' check (status in ('pending', 'running', 'complete', 'failed')),
+  message text not null,
+  created_at timestamp with time zone not null default now()
+);
+
+alter table agent_run_events enable row level security;
+
+drop policy if exists "agent_run_events_read" on agent_run_events;
+create policy "agent_run_events_read"
+  on agent_run_events for select
+  using (true);
+
 create table if not exists pricing_history (
   id uuid primary key default uuid_generate_v4(),
   product_id uuid not null references tracked_products(id) on delete cascade,
@@ -84,6 +136,15 @@ create policy "pricing_alerts_read"
 
 create index if not exists competitor_products_embedding_hnsw_idx
   on competitor_products using hnsw (embedding vector_cosine_ops);
+
+create index if not exists competitor_targets_product_idx
+  on competitor_targets (product_id);
+
+create index if not exists agent_runs_product_created_idx
+  on agent_runs (product_id, created_at desc);
+
+create index if not exists agent_run_events_run_created_idx
+  on agent_run_events (run_id, created_at asc);
 
 do $$
 begin

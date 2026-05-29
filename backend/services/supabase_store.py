@@ -2,14 +2,19 @@ import asyncio
 import base64
 import json
 import logging
+from datetime import datetime
 from uuid import UUID
 
 from supabase import Client, create_client
 
 from config.settings import get_settings
 from models.schemas import (
+    AgentRun,
+    AgentRunEvent,
     AlertItem,
     CompetitorPrice,
+    CompetitorTarget,
+    CompetitorTargetIn,
     DashboardProduct,
     ExtractionResult,
     PricingHistoryItem,
@@ -117,6 +122,111 @@ async def create_product(payload: ProductIn) -> Product:
         title=str(row["title"]),
         base_cost=float(row["base_cost"]),
         current_price=float(row["current_price"]),
+    )
+
+
+async def list_competitor_targets(limit: int = 100) -> list[CompetitorTarget]:
+    client = supabase_client()
+    if client is None:
+        return []
+
+    def _run() -> list[dict]:
+        return (
+            client.table("competitor_targets")
+            .select("*")
+            .order("created_at", desc=True)
+            .limit(limit)
+            .execute()
+            .data
+            or []
+        )
+
+    try:
+        rows = await asyncio.to_thread(_run)
+    except Exception as exc:
+        logger.warning("Unable to list competitor targets", exc_info=exc)
+        return []
+    return [
+        CompetitorTarget(
+            id=UUID(str(row["id"])),
+            product_id=UUID(str(row["product_id"])),
+            competitor_name=str(row["competitor_name"]),
+            competitor_url=str(row["competitor_url"]),
+            status=row.get("status") or "active",
+            last_checked_at=row.get("last_checked_at"),
+            created_at=row.get("created_at"),
+        )
+        for row in rows
+    ]
+
+
+async def create_competitor_target(payload: CompetitorTargetIn) -> CompetitorTarget:
+    require_server_write_key()
+    client = supabase_client()
+    if client is None:
+        raise RuntimeError("Supabase is not configured")
+    row = {
+        "product_id": str(payload.product_id),
+        "competitor_name": payload.competitor_name,
+        "competitor_url": str(payload.competitor_url),
+        "status": "active",
+    }
+
+    def _run() -> dict:
+        return client.table("competitor_targets").insert(row).execute().data[0]
+
+    created = await asyncio.to_thread(_run)
+    return CompetitorTarget(
+        id=UUID(str(created["id"])),
+        product_id=UUID(str(created["product_id"])),
+        competitor_name=str(created["competitor_name"]),
+        competitor_url=str(created["competitor_url"]),
+        status=created.get("status") or "active",
+        last_checked_at=created.get("last_checked_at"),
+        created_at=created.get("created_at"),
+    )
+
+
+async def get_competitor_target(target_id: UUID) -> CompetitorTarget | None:
+    client = supabase_client()
+    if client is None:
+        return None
+
+    def _run() -> list[dict]:
+        return (
+            client.table("competitor_targets")
+            .select("*")
+            .eq("id", str(target_id))
+            .limit(1)
+            .execute()
+            .data
+            or []
+        )
+
+    rows = await asyncio.to_thread(_run)
+    if not rows:
+        return None
+    row = rows[0]
+    return CompetitorTarget(
+        id=UUID(str(row["id"])),
+        product_id=UUID(str(row["product_id"])),
+        competitor_name=str(row["competitor_name"]),
+        competitor_url=str(row["competitor_url"]),
+        status=row.get("status") or "active",
+        last_checked_at=row.get("last_checked_at"),
+        created_at=row.get("created_at"),
+    )
+
+
+async def touch_competitor_target(target_id: UUID) -> None:
+    client = supabase_client()
+    if client is None or not has_server_write_key():
+        return
+    await asyncio.to_thread(
+        lambda: client.table("competitor_targets")
+        .update({"last_checked_at": datetime.utcnow().isoformat()})
+        .eq("id", str(target_id))
+        .execute()
     )
 
 
@@ -253,9 +363,181 @@ async def list_pricing_history(limit: int = 100) -> list[PricingHistoryItem]:
             new_price=float(row["new_price"]),
             competitor_price=float(row.get("competitor_price") or 0),
             triggered_by=str(row["triggered_by"]),
+            created_at=row.get("created_at"),
         )
         for row in rows
     ]
+
+
+async def create_agent_run(
+    product_id: UUID,
+    competitor_name: str,
+    competitor_url: str,
+    target_id: UUID | None = None,
+) -> AgentRun | None:
+    client = supabase_client()
+    if client is None or not has_server_write_key():
+        return None
+    row = {
+        "target_id": str(target_id) if target_id else None,
+        "product_id": str(product_id),
+        "competitor_name": competitor_name,
+        "competitor_url": competitor_url,
+        "status": "running",
+    }
+
+    def _run() -> dict:
+        return client.table("agent_runs").insert(row).execute().data[0]
+
+    created = await asyncio.to_thread(_run)
+    return AgentRun(
+        id=UUID(str(created["id"])),
+        target_id=UUID(str(created["target_id"])) if created.get("target_id") else None,
+        product_id=UUID(str(created["product_id"])),
+        competitor_name=str(created["competitor_name"]),
+        competitor_url=str(created["competitor_url"]),
+        status=created.get("status") or "running",
+        created_at=created.get("created_at"),
+    )
+
+
+def _stage_from_log(message: str) -> str:
+    if message.startswith("[") and "]" in message:
+        return message[1 : message.index("]")]
+    return "System"
+
+
+async def append_agent_run_event(
+    run_id: UUID,
+    message: str,
+    status: str = "complete",
+) -> AgentRunEvent | None:
+    client = supabase_client()
+    if client is None or not has_server_write_key():
+        return None
+    row = {
+        "run_id": str(run_id),
+        "stage": _stage_from_log(message),
+        "status": status,
+        "message": message,
+    }
+
+    def _run() -> dict:
+        return client.table("agent_run_events").insert(row).execute().data[0]
+
+    created = await asyncio.to_thread(_run)
+    return AgentRunEvent(
+        id=UUID(str(created["id"])),
+        run_id=UUID(str(created["run_id"])),
+        stage=str(created["stage"]),
+        status=created.get("status") or "complete",
+        message=str(created["message"]),
+        created_at=created.get("created_at"),
+    )
+
+
+async def complete_agent_run(run_id: UUID, status: str, error_message: str | None = None) -> None:
+    client = supabase_client()
+    if client is None or not has_server_write_key():
+        return
+    row = {
+        "status": status,
+        "error_message": error_message,
+        "completed_at": datetime.utcnow().isoformat(),
+    }
+    await asyncio.to_thread(lambda: client.table("agent_runs").update(row).eq("id", str(run_id)).execute())
+
+
+async def list_agent_runs(limit: int = 50) -> list[AgentRun]:
+    client = supabase_client()
+    if client is None:
+        return []
+
+    def _run() -> list[dict]:
+        return (
+            client.table("agent_runs")
+            .select("*")
+            .order("created_at", desc=True)
+            .limit(limit)
+            .execute()
+            .data
+            or []
+        )
+
+    try:
+        rows = await asyncio.to_thread(_run)
+    except Exception as exc:
+        logger.warning("Unable to list agent runs", exc_info=exc)
+        return []
+    runs = [
+        AgentRun(
+            id=UUID(str(row["id"])),
+            target_id=UUID(str(row["target_id"])) if row.get("target_id") else None,
+            product_id=UUID(str(row["product_id"])),
+            competitor_name=str(row["competitor_name"]),
+            competitor_url=str(row["competitor_url"]),
+            status=row.get("status") or "running",
+            error_message=row.get("error_message"),
+            created_at=row.get("created_at"),
+            completed_at=row.get("completed_at"),
+        )
+        for row in rows
+    ]
+    return runs
+
+
+async def get_agent_run(run_id: UUID) -> AgentRun | None:
+    client = supabase_client()
+    if client is None:
+        return None
+
+    def _run() -> tuple[list[dict], list[dict]]:
+        run_rows = (
+            client.table("agent_runs")
+            .select("*")
+            .eq("id", str(run_id))
+            .limit(1)
+            .execute()
+            .data
+            or []
+        )
+        event_rows = (
+            client.table("agent_run_events")
+            .select("*")
+            .eq("run_id", str(run_id))
+            .order("created_at", desc=False)
+            .execute()
+            .data
+            or []
+        )
+        return run_rows, event_rows
+
+    run_rows, event_rows = await asyncio.to_thread(_run)
+    if not run_rows:
+        return None
+    row = run_rows[0]
+    return AgentRun(
+        id=UUID(str(row["id"])),
+        target_id=UUID(str(row["target_id"])) if row.get("target_id") else None,
+        product_id=UUID(str(row["product_id"])),
+        competitor_name=str(row["competitor_name"]),
+        competitor_url=str(row["competitor_url"]),
+        status=row.get("status") or "running",
+        error_message=row.get("error_message"),
+        created_at=row.get("created_at"),
+        completed_at=row.get("completed_at"),
+        events=[
+            AgentRunEvent(
+                id=UUID(str(event["id"])),
+                run_id=UUID(str(event["run_id"])),
+                stage=str(event["stage"]),
+                status=event.get("status") or "complete",
+                message=str(event["message"]),
+                created_at=event.get("created_at"),
+            )
+            for event in event_rows
+        ],
+    )
 
 
 async def create_alert(alert: AlertItem) -> None:

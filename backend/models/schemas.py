@@ -33,6 +33,19 @@ class CompetitorUrlInput(StrictBaseModel):
     competitor_name: str = Field(default="Unknown Competitor", min_length=2, max_length=120)
 
 
+class CompetitorTargetIn(StrictBaseModel):
+    product_id: UUID
+    competitor_name: str = Field(min_length=2, max_length=120)
+    competitor_url: HttpUrl
+
+
+class CompetitorTarget(CompetitorTargetIn):
+    id: UUID = Field(default_factory=uuid4)
+    status: Literal["active", "paused"] = "active"
+    last_checked_at: datetime | None = None
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+
+
 class ExtractionResult(StrictBaseModel):
     title: str = Field(min_length=2, max_length=240, description="Competitor product title")
     price: float = Field(gt=0, description="Numeric sale price, excluding currency symbols")
@@ -86,6 +99,28 @@ class ScanResponse(StrictBaseModel):
     extraction: ExtractionResult
     decision: PricingDecision
     logs: list[str]
+
+
+class AgentRunEvent(StrictBaseModel):
+    id: UUID = Field(default_factory=uuid4)
+    run_id: UUID
+    stage: str = Field(min_length=2, max_length=80)
+    status: Literal["pending", "running", "complete", "failed"] = "complete"
+    message: str = Field(min_length=2, max_length=500)
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+
+
+class AgentRun(StrictBaseModel):
+    id: UUID = Field(default_factory=uuid4)
+    target_id: UUID | None = None
+    product_id: UUID
+    competitor_name: str = Field(min_length=2, max_length=120)
+    competitor_url: HttpUrl
+    status: Literal["running", "complete", "failed"] = "running"
+    error_message: str | None = None
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+    completed_at: datetime | None = None
+    events: list[AgentRunEvent] = Field(default_factory=list)
 
 
 class AutopilotSettings(StrictBaseModel):
