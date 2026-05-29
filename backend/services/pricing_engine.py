@@ -1,7 +1,9 @@
 import asyncio
 import hashlib
 import logging
+import os
 from uuid import UUID
+from urllib.parse import urlparse, urlunparse
 
 import httpx
 from google import genai
@@ -69,9 +71,15 @@ async def match_product(product_id: UUID, embedding: list[float]) -> UUID:
 
 async def dispatch_storefront_webhook(decision: PricingDecision) -> bool:
     settings = get_settings()
+    webhook_url = settings.storefront_webhook_url
+    parsed = urlparse(webhook_url)
+    render_port = os.getenv("PORT")
+    if parsed.hostname in {"localhost", "127.0.0.1"} and parsed.port == 8000 and render_port:
+        webhook_url = urlunparse(parsed._replace(netloc=f"127.0.0.1:{render_port}"))
+
     async with httpx.AsyncClient(timeout=settings.request_timeout_seconds) as client:
         response = await client.post(
-            settings.storefront_webhook_url,
+            webhook_url,
             json={"product_id": str(decision.product_id), "new_price": decision.target_price, "source": "autopilot"},
         )
         response.raise_for_status()
