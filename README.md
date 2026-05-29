@@ -1,113 +1,76 @@
 # Autonomous Competitor Intelligence & Dynamic Pricing Engine
 
-Project A submission for the AI Full-Stack Developer take-home assessment.
+Production-ready Project A submission: FastAPI, LangGraph, Gemini, Jina Reader, Supabase pgvector, and a multi-page Next.js operator dashboard.
 
-## Live Demo
+## Hosted Application
 
 - Frontend: https://autonomous-competitor-intelligence.vercel.app/
-- API Docs: https://autonomous-competitor-intelligence.onrender.com/docs
-- Backend Health: https://autonomous-competitor-intelligence.onrender.com/api/v1/health
+- Backend API docs: https://autonomous-competitor-intelligence.onrender.com/docs
+- Backend health: https://autonomous-competitor-intelligence.onrender.com/api/v1/health
 
-## Overview
+## Product Workflow
 
-This is an autonomous pricing command center for retail operators. It ingests competitor product URLs, extracts clean markdown with Jina Reader, classifies product facts with Gemini structured output, verifies product matches through Supabase pgvector, calculates profit-safe target prices, and optionally dispatches updates to a mock storefront webhook.
+1. Add or select a tracked product with base cost and current price.
+2. Add a competitor target URL for that product.
+3. Run a scan.
+4. LangGraph executes named agents: Ingestion, Classifier, Analyst, Decision Maker, Webhook.
+5. Supabase pgvector verifies semantic product match.
+6. The pricing engine recommends a 5% undercut while enforcing the configured margin floor.
+7. If autopilot is enabled, the storefront webhook receives the update.
 
-The dashboard is built for the assessment demo flow: competitor URL ingest -> LangGraph agent timeline -> vector verification -> pricing decision -> storefront action.
+## Architecture
 
-## Tech Stack
+- Frontend: Next.js App Router, TypeScript, Tailwind CSS, Lucide Icons, Recharts.
+- Backend: Python 3.11, FastAPI, Uvicorn, strict Pydantic v2 schemas.
+- Agent orchestration: LangGraph named-agent pipeline.
+- Database: Supabase PostgreSQL with pgvector.
+- Scraping and AI: Jina Reader for Markdown extraction, Gemini for structured parsing and embeddings.
+- Deployment: Render backend, Vercel frontend.
 
-- Frontend: Next.js App Router, TypeScript, Tailwind CSS, Lucide Icons, Recharts
-- Backend: Python, FastAPI, Uvicorn, Pydantic v2
-- Agent Orchestration: LangGraph
-- AI APIs: Gemini structured output and Gemini embeddings
-- Scraping: Jina AI Reader
-- Vector Database: Supabase PostgreSQL with pgvector
-- Deployment: Render backend, Vercel frontend
+## Supabase Schema
 
-## Core Features
+Run `database/schema.sql` in Supabase SQL Editor. It creates:
 
-- Competitor URL ingest workflow
-- LangGraph agent timeline:
-  - Ingestion
-  - Classifier
-  - Analyst
-  - Decision Maker
-  - Webhook
-- Semantic product matching with vector distance
-- Price-to-spec ratio calculation
-- Pricing rule: 5% competitor undercut, never below margin floor
-- Autopilot toggle for storefront updates
-- Minimum margin threshold control
-- Real-time execution log stream
-- Operational alerts
-- Pricing history chart
-- User-added tracked products
-- Swagger/OpenAPI documentation
+- `tracked_products`
+- `competitor_products`
+- `competitor_targets`
+- `agent_runs`
+- `agent_run_events`
+- `pricing_history`
+- `pricing_alerts`
+- `match_products(sample_embedding, similarity_threshold)`
 
-## Assignment Alignment
+Backend writes require `SUPABASE_SERVICE_ROLE_KEY` or a Supabase server secret. Publishable keys are not enough for production writes.
 
-- Supabase setup: `tracked_products`, `competitor_products`, `pricing_history`, `pricing_alerts`, vector index, and `match_products` RPC are defined in `database/schema.sql`.
-- Agent state graph: `backend/services/pricing_graph.py` implements named LangGraph agents for ingestion, classification, analysis, decision making, and webhook dispatch.
-- FastAPI integration: endpoints expose scan triggering, dashboard state, alerts, settings, logs, and the mock storefront webhook.
-- Dashboard UI: the deployed app shows active products, competitor prices, price charts, execution logs, alerts, autopilot control, and competitor URL ingest.
-- Deployment: backend is hosted on Render and frontend is hosted on Vercel.
+## Environment
 
-## Repository Structure
-
-```text
-backend/
-  config/
-  models/
-  routers/
-  scripts/
-  services/
-  Dockerfile
-  requirements.txt
-database/
-  schema.sql
-frontend/
-  app/
-  components/
-  lib/
-  vercel.json
-README.md
-```
-
-## Environment Variables
-
-Backend environment variables:
+Backend `backend/.env`:
 
 ```env
 GEMINI_API_KEY=
 GEMINI_MODEL=gemini-2.5-flash
 GEMINI_EMBEDDING_MODEL=gemini-embedding-001
 EMBEDDING_DIMENSIONS=1536
-SUPABASE_URL=
-SUPABASE_SERVICE_ROLE_KEY=
-STOREFRONT_WEBHOOK_URL=https://autonomous-competitor-intelligence.onrender.com/api/v1/mock-storefront-webhook
-CORS_ORIGIN_REGEX=https://.*\.vercel\.app
+SUPABASE_URL=https://your-project.supabase.co
+SUPABASE_SERVICE_ROLE_KEY=sb_secret_or_service_role_key
+STOREFRONT_WEBHOOK_URL=https://your-backend.onrender.com/api/v1/mock-storefront-webhook
+ENABLE_DEMO_FALLBACKS=false
 ```
 
-Frontend environment variable:
+Frontend `frontend/.env.local`:
 
 ```env
 NEXT_PUBLIC_API_BASE_URL=https://autonomous-competitor-intelligence.onrender.com/api/v1
 ```
 
-Never commit `.env` files. Rotate any keys that were exposed during development.
-
 ## Local Setup
-
-Backend:
 
 ```powershell
 python -m venv .venv
 .\.venv\Scripts\python.exe -m pip install -r backend\requirements.txt
 cd backend
-..\.venv\Scripts\uvicorn.exe main:app --reload --host 127.0.0.1 --port 8001
+..\.venv\Scripts\uvicorn.exe main:app --reload --host 127.0.0.1 --port 8000
 ```
-
-Frontend:
 
 ```powershell
 cd frontend
@@ -115,93 +78,50 @@ npm install
 npm run dev
 ```
 
-Local URLs:
-
-- Frontend: http://127.0.0.1:3000
-- Backend docs: http://127.0.0.1:8001/docs
-
-## Supabase Setup
-
-1. Create a Supabase project.
-2. Run `database/schema.sql` in the Supabase SQL Editor.
-3. Add backend environment variables.
-4. Seed demo products:
-
-```powershell
-cd backend
-..\.venv\Scripts\python.exe scripts\seed_supabase.py
-```
-
-The seed script creates demo products and competitor embeddings for the dashboard.
-
-## Deployment Notes
-
-Render backend:
-
-- Root Directory: `backend`
-- Build Command: `pip install -r requirements.txt`
-- Start Command: `uvicorn main:app --host 0.0.0.0 --port $PORT`
-
-Vercel frontend:
-
-- Root Directory: `frontend`
-- Framework: Next.js
-- Build Command: `npm run build`
-- Environment: `NEXT_PUBLIC_API_BASE_URL=https://autonomous-competitor-intelligence.onrender.com/api/v1`
+Open `http://127.0.0.1:3000`.
 
 ## Verification
 
-Backend:
-
 ```powershell
 .\.venv\Scripts\python.exe -m compileall backend
-```
-
-Frontend:
-
-```powershell
 cd frontend
 npm run typecheck
 npm run lint
 npm run build
-npm audit
 ```
 
-Live smoke checks:
+Smoke endpoints:
 
-- https://autonomous-competitor-intelligence.onrender.com/api/v1/health
-- https://autonomous-competitor-intelligence.onrender.com/api/v1/dashboard
-- https://autonomous-competitor-intelligence.onrender.com/api/v1/alerts
-- https://autonomous-competitor-intelligence.onrender.com/docs
+- `GET /api/v1/health`
+- `GET /api/v1/dashboard`
+- `GET /api/v1/alerts`
+- `GET /api/v1/competitor-targets`
+- `GET /api/v1/scans`
+- `POST /api/v1/scan`
 
-## Demo Flow
+## Assignment Alignment
 
-1. Open the frontend.
-2. Show the Project A submission readiness panel.
-3. Show seeded products in the catalog.
-4. Click `Load Demo Scan`.
-5. Run the competitor URL ingest.
-6. Walk through the agent timeline.
-7. Explain vector match confidence, distance, price-to-spec ratio, margin floor, and target price.
-8. Show the execution stream and alerts.
-9. Open the API docs.
+- Supabase: spec tables, pgvector index, compatibility views, persistent alerts, target URLs, and scan-run history.
+- LangGraph: named agents for ingestion, classification, vector analysis, decisioning, and webhook dispatch.
+- FastAPI: REST endpoints for dashboard state, settings, scans, alerts, products, targets, logs, and mock storefront webhook.
+- Dashboard: multi-page command center with products, competitors, scans, alerts, readiness, autopilot controls, catalog intelligence, and pricing trajectories.
+- Deployment: Docker-ready backend and Vercel-ready frontend with env-only secrets.
 
-## Loom Script
+## Five-Minute Loom Script
 
-1. "I selected Project A: Autonomous Competitor Intelligence & Dynamic Pricing Engine."
-2. "The frontend is hosted on Vercel and the FastAPI backend is hosted on Render."
-3. "Supabase stores tracked products, competitor observations, pricing history, alerts, and pgvector embeddings."
-4. "This ingest panel triggers a LangGraph workflow with five named agents."
-5. "The analyst agent verifies semantic similarity through the `match_products` RPC."
-6. "The decision agent applies the 5% undercut rule while respecting the margin floor."
-7. "When autopilot is enabled, the webhook agent dispatches to the mock storefront endpoint."
-8. "Swagger documents the backend endpoints at the hosted `/docs` URL."
+1. Open the Vercel dashboard and show the Command Center.
+2. Open the Products page and explain tracked product cost/current price.
+3. Open Competitors and add or select a competitor URL target.
+4. Run a scan and walk through the agent execution timeline.
+5. Show semantic match confidence, price-to-spec ratio, margin floor, and pricing recommendation.
+6. Show Alerts and Scan History as persistent operational evidence.
+7. Open the Render `/docs` page and point to the FastAPI endpoints.
 
-## Final Submission Checklist
+## Deployment Checklist
 
-- GitHub repo contains no `.env` files.
-- Supabase keys and Gemini keys are rotated before final review.
-- Frontend Vercel URL is live.
-- Backend Render docs URL is live.
-- Supabase schema is included in `database/schema.sql`.
-- Loom video is under 5 minutes.
+- Rotate any keys that were pasted into local files or chat.
+- Confirm `.env` and `.env.local` are ignored.
+- Run `database/schema.sql` in Supabase.
+- Set backend env vars in Render.
+- Set Vercel `NEXT_PUBLIC_API_BASE_URL` to the Render API URL plus `/api/v1`.
+- Smoke test frontend, backend health, dashboard, alerts, targets, scans, and Swagger docs.
