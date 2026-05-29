@@ -11,7 +11,7 @@ from models.schemas import ExtractionResult
 logger = logging.getLogger(__name__)
 
 
-def _demo_markdown_for_url(target_url: str) -> str | None:
+def _fixture_markdown_for_url(target_url: str) -> str | None:
     if "fakestoreapi.com/products/1" not in target_url:
         return None
     return """
@@ -26,7 +26,7 @@ Specifications:
 - Fits 15 inch laptops
 - Durable fabric
 - Casual daypack
-Source: Fake Store API demo fixture
+Source: Local fallback fixture
 """.strip()
 
 
@@ -39,9 +39,9 @@ async def fetch_markdown_from_jina(target_url: str) -> str:
             response = await client.get(reader_url, headers={"Accept": "text/markdown"})
             response.raise_for_status()
         except httpx.HTTPStatusError as exc:
-            fallback = _demo_markdown_for_url(target_url)
+            fallback = _fixture_markdown_for_url(target_url) if settings.enable_demo_fallbacks else None
             if exc.response.status_code in {429, 451, 502, 503, 504} and fallback is not None:
-                logger.warning("Jina unavailable/rate-limited; using deterministic demo markdown fallback")
+                logger.warning("Jina unavailable/rate-limited; using local fixture fallback")
                 return fallback
             raise
     markdown = response.text.strip()
@@ -51,7 +51,7 @@ async def fetch_markdown_from_jina(target_url: str) -> str:
     return markdown
 
 
-def _demo_fallback_extraction(markdown: str) -> ExtractionResult | None:
+def _fixture_fallback_extraction(markdown: str) -> ExtractionResult | None:
     normalized = markdown.lower()
     if "fakestoreapi" not in normalized and "fjallraven" not in normalized:
         return None
@@ -96,9 +96,9 @@ def _parse_with_gemini_sync(markdown: str) -> ExtractionResult:
             break
         except genai_errors.ServerError as exc:
             last_error = exc
-            fallback = _demo_fallback_extraction(markdown)
+            fallback = _fixture_fallback_extraction(markdown) if settings.enable_demo_fallbacks else None
             if fallback is not None:
-                logger.warning("Gemini unavailable; using deterministic demo fallback extraction")
+                logger.warning("Gemini unavailable; using local fixture extraction")
                 return fallback
             if attempt == 2:
                 raise

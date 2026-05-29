@@ -1,7 +1,7 @@
 "use client";
 
 import { FormEvent, useMemo, useState } from "react";
-import { Bot, Link2, Play, Search, Wand2 } from "lucide-react";
+import { Bot, Link2, Play, Search } from "lucide-react";
 import { AgentTimeline } from "@/components/AgentTimeline";
 import { runCompetitorScan } from "@/lib/api";
 import type { DashboardProduct, ScanResponse } from "@/lib/types";
@@ -12,11 +12,6 @@ type Props = {
 };
 
 const currency = new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" });
-const demo = {
-  productId: "4a50ce59-2854-4d5a-9fa4-02645f861bcc",
-  competitorName: "Fake Store API",
-  url: "https://fakestoreapi.com/products/1"
-};
 
 export function ScanPanel({ products, onComplete }: Props) {
   const [productId, setProductId] = useState<string>("");
@@ -60,15 +55,6 @@ export function ScanPanel({ products, onComplete }: Props) {
     }
   }
 
-  function loadDemo(): void {
-    setProductId(demo.productId);
-    setCompetitorName(demo.competitorName);
-    setUrl(demo.url);
-    setError(null);
-    setResult(null);
-    setTimelineLogs([]);
-  }
-
   return (
     <section className="border border-ink/10 bg-white">
       <div className="flex flex-col gap-3 border-b border-ink/10 px-4 py-4 md:flex-row md:items-center md:justify-between">
@@ -76,17 +62,12 @@ export function ScanPanel({ products, onComplete }: Props) {
           <Bot size={18} />
           <div>
             <h2 className="text-base font-semibold">Competitor URL Ingest</h2>
-            <p className="text-xs text-ink/55">Raw markdown extraction to vector-verified pricing action</p>
+            <p className="text-xs text-ink/55">Run a one-off market check against any competitor product page.</p>
           </div>
         </div>
-        <button
-          type="button"
-          onClick={loadDemo}
-          className="inline-flex h-9 items-center justify-center gap-2 border border-ink/15 bg-mist px-3 text-sm font-semibold text-ink"
-        >
-          <Wand2 size={16} />
-          Load Demo Scan
-        </button>
+        <span className="border border-ink/15 bg-mist px-3 py-2 text-xs font-semibold text-ink/65">
+          Real Jina + Gemini execution
+        </span>
       </div>
       <form onSubmit={submit} className="grid gap-3 p-4 md:grid-cols-[1fr_1fr]">
         <label className="grid gap-1 text-sm">

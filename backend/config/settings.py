@@ -28,6 +28,7 @@ class Settings(BaseSettings):
 
     storefront_webhook_url: str = "http://localhost:8000/api/v1/mock-storefront-webhook"
     request_timeout_seconds: float = 30.0
+    enable_demo_fallbacks: bool = False
 
 
 @lru_cache

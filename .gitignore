@@ -10,3 +10,4 @@ node_modules/
 dist/
 build/
 tmp_scan_site/
+continue.md
