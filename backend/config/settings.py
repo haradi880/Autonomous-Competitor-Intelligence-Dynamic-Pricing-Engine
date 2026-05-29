@@ -14,6 +14,7 @@ class Settings(BaseSettings):
             "http://127.0.0.1:3000",
         ]
     )
+    cors_origin_regex: str | None = r"https://.*\.vercel\.app"
 
     gemini_api_key: str | None = None
     gemini_model: str = "gemini-3.5-flash"

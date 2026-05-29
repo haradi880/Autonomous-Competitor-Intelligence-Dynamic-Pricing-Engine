@@ -7,6 +7,7 @@ import { AlertsPanel } from "@/components/AlertsPanel";
 import { CatalogTable } from "@/components/CatalogTable";
 import { LogStream } from "@/components/LogStream";
 import { PriceChart } from "@/components/PriceChart";
+import { ProductOnboarding } from "@/components/ProductOnboarding";
 import { ScanPanel } from "@/components/ScanPanel";
 import { SubmissionChecklist } from "@/components/SubmissionChecklist";
 import { apiBase, fetchDashboard, updateSettings } from "@/lib/api";
@@ -111,6 +112,7 @@ export default function DashboardPage() {
           </div>
           {error ? <div className="border border-coral/30 bg-coral/10 px-4 py-3 text-sm text-coral">{error}</div> : null}
           <SubmissionChecklist />
+          <ProductOnboarding onComplete={refresh} />
           <ScanPanel products={state.products} onComplete={refresh} />
           <AlertsPanel alerts={state.alerts} />
           <CatalogTable products={filteredProducts} />

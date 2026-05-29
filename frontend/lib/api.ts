@@ -1,4 +1,4 @@
-import type { AlertItem, AutopilotSettings, DashboardState, ScanResponse } from "./types";
+import type { AlertItem, AutopilotSettings, DashboardState, DashboardProduct, ScanResponse } from "./types";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8000/api/v1";
 
@@ -53,4 +53,21 @@ export async function runCompetitorScan(input: {
     throw new Error(body?.detail ?? `Scan failed: ${response.status}`);
   }
   return (await response.json()) as ScanResponse;
+}
+
+export async function createTrackedProduct(input: {
+  title: string;
+  base_cost: number;
+  current_price: number;
+}): Promise<DashboardProduct> {
+  const response = await fetch(`${API_BASE}/products`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(input)
+  });
+  if (!response.ok) {
+    const body = (await response.json().catch(() => null)) as { detail?: string } | null;
+    throw new Error(body?.detail ?? `Product create failed: ${response.status}`);
+  }
+  return (await response.json()) as DashboardProduct;
 }
