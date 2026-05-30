@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { AppShell } from "@/components/AppShell";
+import { DashboardProvider } from "@/components/DashboardProvider";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { ToastProvider } from "@/components/ToastProvider";
 import "./globals.css";
@@ -15,7 +16,9 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
       <body>
         <ErrorBoundary>
           <ToastProvider>
-            <AppShell>{children}</AppShell>
+            <DashboardProvider>
+              <AppShell>{children}</AppShell>
+            </DashboardProvider>
           </ToastProvider>
         </ErrorBoundary>
       </body>

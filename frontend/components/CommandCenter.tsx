@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { RefreshCcw, Search } from "lucide-react";
 import { AlertsPanel } from "@/components/AlertsPanel";
 import { AutopilotControls } from "@/components/AutopilotControls";
@@ -13,10 +13,9 @@ import { ProductOnboarding } from "@/components/ProductOnboarding";
 import { ScanHistoryPanel } from "@/components/ScanHistoryPanel";
 import { ScanPanel } from "@/components/ScanPanel";
 import { SubmissionChecklist } from "@/components/SubmissionChecklist";
+import { useDashboard } from "@/components/DashboardProvider";
 import { ErrorPanel, LoadingLabel, SkeletonBlock } from "@/components/ui";
-import { apiBase, fetchAnalyticsSummary, fetchDashboard, updateSettings } from "@/lib/api";
-import type { AnalyticsSummary, ChartPoint, DashboardState, ScanResponse } from "@/lib/types";
-import { useToast } from "@/components/ToastProvider";
+import type { ChartPoint, ScanResponse } from "@/lib/types";
 
 type View = "overview" | "products" | "competitors" | "scans" | "alerts" | "readiness";
 
@@ -24,53 +23,18 @@ type Props = {
   view: View;
 };
 
-const initialState: DashboardState = {
-  settings: { autopilot: true, minimum_margin_rate: 0.12 },
-  products: [],
-  history: [],
-  logs: ["[UI] Connecting to pricing engine..."],
-  alerts: []
+const titles: Record<View, { title: string; eyebrow: string }> = {
+  overview: { title: "Command Center", eyebrow: "Executive overview" },
+  products: { title: "Product Catalog", eyebrow: "Tracked inventory" },
+  competitors: { title: "Competitor Targets", eyebrow: "Market monitoring" },
+  scans: { title: "Agent Runs", eyebrow: "Execution history" },
+  alerts: { title: "Operational Alerts", eyebrow: "Risk and recovery" },
+  readiness: { title: "Submission Readiness", eyebrow: "Project A alignment" }
 };
 
 export function CommandCenter({ view }: Props) {
-  const [state, setState] = useState<DashboardState>(initialState);
-  const [lastScan, setLastScan] = useState<ScanResponse | null>(null);
-  const [summary, setSummary] = useState<AnalyticsSummary | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
+  const { state, summary, lastScan, error, loading, refresh, updateAutopilotSettings, setLastScanResult } = useDashboard();
   const [query, setQuery] = useState("");
-  const { notify } = useToast();
-
-  async function refresh(): Promise<void> {
-    try {
-      setLoading(true);
-      const [dashboard, analytics] = await Promise.all([fetchDashboard(), fetchAnalyticsSummary().catch(() => null)]);
-      setState(dashboard);
-      setSummary(analytics);
-      setError(null);
-    } catch (err) {
-      setError(
-        err instanceof Error
-          ? `${err.message}. If Render is waking from sleep, wait a few seconds and refresh.`
-          : "Unknown dashboard error"
-      );
-      notify("Dashboard data could not be refreshed. Check backend availability.", "error");
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  useEffect(() => {
-    void refresh();
-    const source = new EventSource(`${apiBase()}/logs/stream`);
-    source.onmessage = (event: MessageEvent<string>) => {
-      const parsed = JSON.parse(event.data) as { message: string };
-      setState((current) => ({ ...current, logs: [...current.logs, parsed.message].slice(-120) }));
-      void refresh();
-    };
-    source.onerror = () => setError("Live log stream disconnected. Retrying automatically.");
-    return () => source.close();
-  }, []);
 
   const chartData = useMemo<ChartPoint[]>(
     () =>
@@ -86,70 +50,61 @@ export function CommandCenter({ view }: Props) {
     const normalized = query.trim().toLowerCase();
     if (!normalized) return state.products;
     return state.products.filter((product) =>
-      [product.title, product.competitor_name ?? ""].some((value) => value.toLowerCase().includes(normalized))
+      [product.title, product.competitor_name ?? "", product.brand ?? "", product.category ?? "", product.sku ?? ""].some((value) =>
+        value.toLowerCase().includes(normalized)
+      )
     );
   }, [query, state.products]);
 
   async function handleScanComplete(result: ScanResponse): Promise<void> {
-    setLastScan(result);
+    setLastScanResult(result);
     await refresh();
   }
 
-  const controls = (
-    <AutopilotControls
-      settings={state.settings}
-      onChange={(next) => {
-        setState((current) => ({ ...current, settings: next }));
-        void updateSettings(next).then(() => {
-          notify(`Autopilot ${next.autopilot ? "enabled" : "disabled"} with ${Math.round(next.minimum_margin_rate * 100)}% margin floor.`, "success");
-          return refresh();
-        }).catch((err: unknown) => {
-          setError(err instanceof Error ? err.message : "Settings update failed");
-          notify("Settings update failed.", "error");
-        });
-      }}
-    />
-  );
-
   return (
-    <main>
-      {controls}
-      <div className="grid gap-5 px-4 py-5 md:px-8 xl:grid-cols-[minmax(0,1fr)_360px]">
-        <div className="space-y-5">
-          <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-            <p className="text-sm text-ink/65">
-              {loading && state.products.length === 0
-                ? "Connecting to pricing engine..."
-                : `${state.products.length} products monitored - ${
-                    state.settings.autopilot ? "autonomous updates active" : "analysis only"
-                  }`}
-            </p>
-            <div className="flex gap-2">
-              <label className="flex h-10 min-w-0 flex-1 rounded-lg border border-ink/10 bg-white/80 shadow-sm md:w-80">
-                <span className="grid w-10 place-items-center text-ink/50">
+    <div>
+      <AutopilotControls settings={state.settings} onChange={(next) => void updateAutopilotSettings(next)} />
+      <div className="mx-auto grid w-full max-w-[1600px] gap-5 px-4 py-5 sm:px-5 lg:px-8 xl:grid-cols-[minmax(0,1fr)_360px]">
+        <div className="min-w-0 space-y-5">
+          <section className="flex flex-col gap-3 rounded-2xl border border-white/70 bg-white/70 p-4 shadow-sm backdrop-blur md:flex-row md:items-center md:justify-between">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-wide text-ink/45">{titles[view].eyebrow}</p>
+              <h2 className="mt-1 text-2xl font-semibold tracking-tight text-ink md:text-3xl">{titles[view].title}</h2>
+              <p className="mt-1 text-sm text-ink/55">
+                {loading && state.products.length === 0
+                  ? "Connecting to pricing engine..."
+                  : `${state.products.length} products monitored - ${
+                      state.settings.autopilot ? "autonomous updates active" : "analysis only"
+                    }`}
+              </p>
+            </div>
+            <div className="flex min-w-0 gap-2">
+              <label className="flex h-11 min-w-0 flex-1 rounded-xl border border-ink/10 bg-white/85 shadow-sm md:w-80">
+                <span className="grid w-10 place-items-center text-ink/45">
                   <Search size={17} />
                 </span>
                 <input
                   value={query}
                   onChange={(event) => setQuery(event.currentTarget.value)}
                   placeholder="Search catalog"
-                  className="min-w-0 flex-1 bg-transparent px-1 outline-none"
+                  className="min-w-0 flex-1 bg-transparent px-1 text-sm outline-none"
                 />
               </label>
               <button
                 type="button"
                 title="Refresh dashboard"
                 onClick={() => void refresh()}
-                className="grid h-10 w-10 place-items-center rounded-lg border border-ink/10 bg-white/80 text-ink shadow-sm transition hover:bg-white"
+                className="grid h-11 w-11 shrink-0 place-items-center rounded-xl border border-ink/10 bg-white/85 text-ink shadow-sm transition hover:bg-white"
               >
                 <RefreshCcw size={18} />
               </button>
             </div>
-          </div>
+          </section>
+
           {error ? <ErrorPanel message={error} onRetry={() => void refresh()} /> : null}
           {loading && state.products.length === 0 ? (
             <div className="glass-panel-subtle p-4">
-              <LoadingLabel label="Warming hosted backend and loading Supabase dashboard data..." />
+              <LoadingLabel label="Loading Supabase-backed pricing intelligence..." />
               <div className="mt-4 grid gap-3 md:grid-cols-3">
                 <SkeletonBlock className="h-24" />
                 <SkeletonBlock className="h-24" />
@@ -161,7 +116,6 @@ export function CommandCenter({ view }: Props) {
           {view === "overview" ? (
             <>
               <KpiGrid summary={summary} />
-              <SubmissionChecklist />
               <CompetitorTargetManager products={state.products} onScanComplete={handleScanComplete} />
               <ScanPanel products={state.products} onComplete={refresh} />
               <CatalogTable products={filteredProducts} lastScan={lastScan} onProductsChanged={refresh} />
@@ -189,8 +143,9 @@ export function CommandCenter({ view }: Props) {
           {view === "alerts" ? <AlertsPanel alerts={state.alerts} /> : null}
           {view === "readiness" ? <SubmissionChecklist expanded /> : null}
         </div>
+
         <LogStream logs={state.logs} />
       </div>
-    </main>
+    </div>
   );
 }

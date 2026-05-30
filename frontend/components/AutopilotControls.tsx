@@ -12,8 +12,9 @@ export function AutopilotControls({ settings, onChange }: Props) {
   const percent = Math.round(settings.minimum_margin_rate * 100);
 
   return (
-    <section className="grid gap-5 border-b border-white/70 bg-white/80 px-5 pb-5 pt-16 shadow-sm backdrop-blur md:grid-cols-[1fr_1.2fr] md:px-8 md:pt-5">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+    <section className="border-b border-white/70 bg-white/80 px-4 py-4 shadow-sm backdrop-blur sm:px-5 lg:px-8">
+      <div className="mx-auto grid w-full max-w-[1600px] gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(320px,0.85fr)] lg:items-center">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between lg:justify-start">
         <div className="min-w-0">
           <p className="text-xs font-semibold uppercase tracking-wide text-ink/55">Control Plane</p>
           <h1 className="mt-1 text-2xl font-semibold tracking-tight md:text-4xl">Autopilot Mode</h1>
@@ -37,7 +38,7 @@ export function AutopilotControls({ settings, onChange }: Props) {
         </button>
       </div>
 
-      <div className="flex flex-col justify-center gap-3">
+      <div className="flex flex-col justify-center gap-3 rounded-2xl border border-ink/10 bg-white/70 p-4">
         <div className="flex items-center justify-between gap-3">
           <div className="flex items-center gap-2 text-sm font-semibold">
             <Gauge size={18} />
@@ -58,6 +59,7 @@ export function AutopilotControls({ settings, onChange }: Props) {
           }
           className="h-2 w-full accent-coral"
         />
+      </div>
       </div>
     </section>
   );
