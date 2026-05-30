@@ -29,7 +29,7 @@ export function ScanHistoryPanel() {
   }, []);
 
   return (
-    <section className="border border-ink/10 bg-white">
+    <section className="rounded-lg border border-white/70 bg-white/85 shadow-sm backdrop-blur">
       <div className="flex items-center gap-2 border-b border-ink/10 px-4 py-3">
         <Activity size={18} />
         <div>

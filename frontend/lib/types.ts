@@ -8,6 +8,12 @@ export type DashboardProduct = {
   title: string;
   base_cost: number;
   current_price: number;
+  sku: string | null;
+  category: string | null;
+  brand: string | null;
+  description: string | null;
+  target_margin: number | null;
+  status: "active" | "archived";
   competitor_price: number | null;
   competitor_name: string | null;
   margin_rate: number;
@@ -71,6 +77,12 @@ export type PricingDecision = {
   match_distance: number | null;
   match_confidence: number | null;
   price_to_spec_ratio: number | null;
+  stock_signal: string | null;
+  trend_signal: string | null;
+  volatility_score: number | null;
+  spec_score: number | null;
+  confidence_score: number | null;
+  reasoning: string[];
 };
 
 export type ScanResponse = {
@@ -82,10 +94,20 @@ export type ScanResponse = {
 export type CompetitorTarget = {
   id: string;
   product_id: string;
+  competitor_id: string | null;
   competitor_name: string;
   competitor_url: string;
   status: "active" | "paused";
   last_checked_at: string | null;
+  created_at: string;
+};
+
+export type Competitor = {
+  id: string;
+  name: string;
+  website: string | null;
+  category: string | null;
+  status: "active" | "paused";
   created_at: string;
 };
 
@@ -109,4 +131,20 @@ export type AgentRun = {
   created_at: string;
   completed_at: string | null;
   events: AgentRunEvent[];
+};
+
+export type AnalyticsSummary = {
+  total_products: number;
+  active_products: number;
+  active_competitors: number;
+  average_price_gap: number | null;
+  recent_scans: number;
+  average_match_confidence: number | null;
+  active_alerts: number;
+};
+
+export type TrendPoint = {
+  label: string;
+  value: number;
+  secondary_value: number | null;
 };

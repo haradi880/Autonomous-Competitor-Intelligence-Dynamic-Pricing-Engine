@@ -13,7 +13,7 @@ function iconFor(severity: AlertItem["severity"]) {
 
 export function AlertsPanel({ alerts }: Props) {
   return (
-    <section className="border border-ink/10 bg-white">
+    <section className="rounded-lg border border-white/70 bg-white/85 shadow-sm backdrop-blur">
       <div className="flex items-center justify-between border-b border-ink/10 px-4 py-3">
         <h2 className="text-base font-semibold">Operational Alerts</h2>
         <span className="text-xs font-semibold text-ink/55">{alerts.length}</span>

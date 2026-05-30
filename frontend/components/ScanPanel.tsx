@@ -56,7 +56,7 @@ export function ScanPanel({ products, onComplete }: Props) {
   }
 
   return (
-    <section className="border border-ink/10 bg-white">
+    <section className="rounded-lg border border-white/70 bg-white/85 shadow-sm backdrop-blur">
       <div className="flex flex-col gap-3 border-b border-ink/10 px-4 py-4 md:flex-row md:items-center md:justify-between">
         <div className="flex items-center gap-2">
           <Bot size={18} />
@@ -75,7 +75,7 @@ export function ScanPanel({ products, onComplete }: Props) {
           <select
             value={selectedProduct?.id ?? ""}
             onChange={(event) => setProductId(event.currentTarget.value)}
-            className="h-10 border border-ink/15 bg-white px-3"
+            className="h-10 rounded-md border border-ink/15 bg-white px-3"
           >
             {products.map((product) => (
               <option key={product.id} value={product.id}>
@@ -89,7 +89,7 @@ export function ScanPanel({ products, onComplete }: Props) {
           <input
             value={competitorName}
             onChange={(event) => setCompetitorName(event.currentTarget.value)}
-            className="h-10 border border-ink/15 px-3"
+            className="h-10 rounded-md border border-ink/15 px-3"
             placeholder="Amazon, Best Buy, Shopify test store"
           />
         </label>
@@ -104,7 +104,7 @@ export function ScanPanel({ products, onComplete }: Props) {
               type="url"
               value={url}
               onChange={(event) => setUrl(event.currentTarget.value)}
-              className="h-10 min-w-0 flex-1 border border-ink/15 px-3"
+              className="h-10 min-w-0 flex-1 rounded-r-md border border-ink/15 px-3"
               placeholder="https://example-store.com/products/item"
             />
           </div>
@@ -112,7 +112,7 @@ export function ScanPanel({ products, onComplete }: Props) {
         <button
           type="submit"
           disabled={busy || products.length === 0}
-          className="inline-flex h-10 items-center justify-center gap-2 bg-ink px-4 text-sm font-semibold text-white disabled:opacity-50 md:w-fit"
+          className="inline-flex h-10 items-center justify-center gap-2 rounded-md bg-ink px-4 text-sm font-semibold text-white disabled:opacity-50 md:w-fit"
         >
           {busy ? <Search size={17} className="animate-pulse" /> : <Play size={17} />}
           {busy ? "Scanning..." : "Run Scan"}
@@ -154,6 +154,18 @@ export function ScanPanel({ products, onComplete }: Props) {
             </p>
             <p className="mt-1 text-ink/60">{result.decision.autopilot_dispatched ? "Webhook dispatched" : "Webhook not dispatched"}</p>
           </div>
+          {result.decision.reasoning.length > 0 ? (
+            <div className="rounded-md border border-ink/10 bg-white p-3 md:col-span-4">
+              <p className="text-xs font-semibold uppercase text-ink/50">Decision Reasoning</p>
+              <div className="mt-2 grid gap-2 md:grid-cols-2">
+                {result.decision.reasoning.map((reason) => (
+                  <p key={reason} className="text-ink/65">
+                    {reason}
+                  </p>
+                ))}
+              </div>
+            </div>
+          ) : null}
         </div>
       ) : null}
     </section>

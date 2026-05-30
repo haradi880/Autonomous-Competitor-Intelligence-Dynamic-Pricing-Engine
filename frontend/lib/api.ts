@@ -1,7 +1,9 @@
 import type {
   AgentRun,
+  AnalyticsSummary,
   AlertItem,
   AutopilotSettings,
+  Competitor,
   CompetitorTarget,
   DashboardState,
   DashboardProduct,
@@ -82,6 +84,11 @@ export async function createTrackedProduct(input: {
   title: string;
   base_cost: number;
   current_price: number;
+  sku?: string | null;
+  category?: string | null;
+  brand?: string | null;
+  description?: string | null;
+  target_margin?: number | null;
 }): Promise<DashboardProduct> {
   const response = await fetch(`${API_BASE}/products`, {
     method: "POST",
@@ -93,6 +100,80 @@ export async function createTrackedProduct(input: {
     throw new Error(body?.detail ?? `Product create failed: ${response.status}`);
   }
   return (await response.json()) as DashboardProduct;
+}
+
+export async function updateTrackedProduct(
+  productId: string,
+  input: Partial<DashboardProduct>
+): Promise<DashboardProduct> {
+  const response = await fetch(`${API_BASE}/products/${productId}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(input)
+  });
+  if (!response.ok) {
+    const body = (await response.json().catch(() => null)) as { detail?: string } | null;
+    throw new Error(body?.detail ?? `Product update failed: ${response.status}`);
+  }
+  return (await response.json()) as DashboardProduct;
+}
+
+export async function deleteTrackedProduct(productId: string): Promise<void> {
+  const response = await fetch(`${API_BASE}/products/${productId}`, { method: "DELETE" });
+  if (!response.ok) {
+    const body = (await response.json().catch(() => null)) as { detail?: string } | null;
+    throw new Error(body?.detail ?? `Product delete failed: ${response.status}`);
+  }
+}
+
+export async function fetchCompetitors(): Promise<Competitor[]> {
+  const response = await fetchWithRetry(`${API_BASE}/competitors`, { cache: "no-store" });
+  if (!response.ok) {
+    throw new Error(`Competitors request failed: ${response.status}`);
+  }
+  return (await response.json()) as Competitor[];
+}
+
+export async function createCompetitor(input: {
+  name: string;
+  website?: string | null;
+  category?: string | null;
+  status?: "active" | "paused";
+}): Promise<Competitor> {
+  const response = await fetch(`${API_BASE}/competitors`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ status: "active", ...input })
+  });
+  if (!response.ok) {
+    const body = (await response.json().catch(() => null)) as { detail?: string } | null;
+    throw new Error(body?.detail ?? `Competitor create failed: ${response.status}`);
+  }
+  return (await response.json()) as Competitor;
+}
+
+export async function updateCompetitor(
+  competitorId: string,
+  input: { name: string; website?: string | null; category?: string | null; status: "active" | "paused" }
+): Promise<Competitor> {
+  const response = await fetch(`${API_BASE}/competitors/${competitorId}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(input)
+  });
+  if (!response.ok) {
+    const body = (await response.json().catch(() => null)) as { detail?: string } | null;
+    throw new Error(body?.detail ?? `Competitor update failed: ${response.status}`);
+  }
+  return (await response.json()) as Competitor;
+}
+
+export async function deleteCompetitor(competitorId: string): Promise<void> {
+  const response = await fetch(`${API_BASE}/competitors/${competitorId}`, { method: "DELETE" });
+  if (!response.ok) {
+    const body = (await response.json().catch(() => null)) as { detail?: string } | null;
+    throw new Error(body?.detail ?? `Competitor delete failed: ${response.status}`);
+  }
 }
 
 export async function fetchCompetitorTargets(): Promise<CompetitorTarget[]> {
@@ -107,6 +188,7 @@ export async function createCompetitorTarget(input: {
   product_id: string;
   competitor_name: string;
   competitor_url: string;
+  competitor_id?: string | null;
 }): Promise<CompetitorTarget> {
   const response = await fetch(`${API_BASE}/competitor-targets`, {
     method: "POST",
@@ -135,4 +217,12 @@ export async function fetchScans(): Promise<AgentRun[]> {
     throw new Error(`Scans request failed: ${response.status}`);
   }
   return (await response.json()) as AgentRun[];
+}
+
+export async function fetchAnalyticsSummary(): Promise<AnalyticsSummary> {
+  const response = await fetchWithRetry(`${API_BASE}/analytics/summary`, { cache: "no-store" });
+  if (!response.ok) {
+    throw new Error(`Analytics summary failed: ${response.status}`);
+  }
+  return (await response.json()) as AnalyticsSummary;
 }

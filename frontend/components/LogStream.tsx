@@ -8,7 +8,7 @@ type Props = {
 
 export function LogStream({ logs }: Props) {
   return (
-    <aside className="flex h-[520px] flex-col border border-ink/10 bg-ink text-white">
+    <aside className="flex h-[520px] flex-col rounded-lg border border-ink/10 bg-ink text-white shadow-xl xl:sticky xl:top-5">
       <div className="flex items-center gap-2 border-b border-white/10 px-4 py-3">
         <Terminal size={18} />
         <h2 className="text-base font-semibold">Execution Stream</h2>
@@ -23,4 +23,3 @@ export function LogStream({ logs }: Props) {
     </aside>
   );
 }
-

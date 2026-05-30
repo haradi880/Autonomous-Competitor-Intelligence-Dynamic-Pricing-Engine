@@ -25,7 +25,7 @@ export function PriceChart({ data }: Props) {
   }, []);
 
   return (
-    <section className="border border-ink/10 bg-white p-4">
+    <section className="rounded-lg border border-white/70 bg-white/85 p-4 shadow-sm backdrop-blur">
       <div className="mb-4 flex flex-col gap-1 md:flex-row md:items-end md:justify-between">
         <div>
           <h2 className="text-base font-semibold">Pricing Trajectory</h2>

@@ -12,7 +12,7 @@ export function AutopilotControls({ settings, onChange }: Props) {
   const percent = Math.round(settings.minimum_margin_rate * 100);
 
   return (
-    <section className="grid gap-5 border-b border-ink/10 bg-white px-5 py-5 md:grid-cols-[1fr_1.2fr] md:px-8">
+    <section className="grid gap-5 border-b border-white/70 bg-white/80 px-16 py-5 shadow-sm backdrop-blur md:grid-cols-[1fr_1.2fr] md:px-8">
       <div className="flex items-center justify-between gap-4">
         <div>
           <p className="text-xs font-semibold uppercase tracking-wide text-ink/55">Control Plane</p>
@@ -62,4 +62,3 @@ export function AutopilotControls({ settings, onChange }: Props) {
     </section>
   );
 }
-

@@ -1,4 +1,7 @@
+"use client";
+
 import { CheckCircle2, Circle, Loader2, XCircle } from "lucide-react";
+import { motion } from "framer-motion";
 
 type StageKey = "ingestion" | "classifier" | "analyst" | "decision" | "webhook";
 type StageStatus = "pending" | "running" | "complete" | "failed";
@@ -39,8 +42,11 @@ export function AgentTimeline({ logs, busy, failed }: Props) {
       {stages.map((stage, index) => {
         const status = statusFor(index, logs, busy, failed);
         return (
-          <div
+          <motion.div
             key={stage.key}
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: index * 0.04 }}
             className={`border px-3 py-3 text-sm ${
               status === "complete"
                 ? "border-fern/30 bg-fern/10 text-fern"
@@ -56,7 +62,7 @@ export function AgentTimeline({ logs, busy, failed }: Props) {
               {stage.label}
             </div>
             <p className="mt-2 text-xs leading-4 opacity-80">{stage.detail}</p>
-          </div>
+          </motion.div>
         );
       })}
     </div>

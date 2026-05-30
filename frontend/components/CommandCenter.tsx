@@ -7,13 +7,14 @@ import { AutopilotControls } from "@/components/AutopilotControls";
 import { CatalogTable } from "@/components/CatalogTable";
 import { CompetitorTargetManager } from "@/components/CompetitorTargetManager";
 import { LogStream } from "@/components/LogStream";
+import { KpiGrid } from "@/components/KpiGrid";
 import { PriceChart } from "@/components/PriceChart";
 import { ProductOnboarding } from "@/components/ProductOnboarding";
 import { ScanHistoryPanel } from "@/components/ScanHistoryPanel";
 import { ScanPanel } from "@/components/ScanPanel";
 import { SubmissionChecklist } from "@/components/SubmissionChecklist";
-import { apiBase, fetchDashboard, updateSettings } from "@/lib/api";
-import type { ChartPoint, DashboardState, ScanResponse } from "@/lib/types";
+import { apiBase, fetchAnalyticsSummary, fetchDashboard, updateSettings } from "@/lib/api";
+import type { AnalyticsSummary, ChartPoint, DashboardState, ScanResponse } from "@/lib/types";
 
 type View = "overview" | "products" | "competitors" | "scans" | "alerts" | "readiness";
 
@@ -32,6 +33,7 @@ const initialState: DashboardState = {
 export function CommandCenter({ view }: Props) {
   const [state, setState] = useState<DashboardState>(initialState);
   const [lastScan, setLastScan] = useState<ScanResponse | null>(null);
+  const [summary, setSummary] = useState<AnalyticsSummary | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [query, setQuery] = useState("");
@@ -39,7 +41,9 @@ export function CommandCenter({ view }: Props) {
   async function refresh(): Promise<void> {
     try {
       setLoading(true);
-      setState(await fetchDashboard());
+      const [dashboard, analytics] = await Promise.all([fetchDashboard(), fetchAnalyticsSummary().catch(() => null)]);
+      setState(dashboard);
+      setSummary(analytics);
       setError(null);
     } catch (err) {
       setError(
@@ -102,7 +106,7 @@ export function CommandCenter({ view }: Props) {
   return (
     <main>
       {controls}
-      <div className="grid gap-5 px-5 py-5 md:px-8 xl:grid-cols-[1fr_360px]">
+      <div className="grid gap-5 px-5 py-5 pt-20 md:px-8 md:pt-5 xl:grid-cols-[1fr_360px]">
         <div className="space-y-5">
           <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
             <p className="text-sm text-ink/65">
@@ -143,10 +147,11 @@ export function CommandCenter({ view }: Props) {
 
           {view === "overview" ? (
             <>
+              <KpiGrid summary={summary} />
               <SubmissionChecklist />
               <CompetitorTargetManager products={state.products} onScanComplete={handleScanComplete} />
               <ScanPanel products={state.products} onComplete={refresh} />
-              <CatalogTable products={filteredProducts} lastScan={lastScan} />
+              <CatalogTable products={filteredProducts} lastScan={lastScan} onProductsChanged={refresh} />
               <PriceChart data={chartData} />
               <AlertsPanel alerts={state.alerts} />
             </>
@@ -155,7 +160,7 @@ export function CommandCenter({ view }: Props) {
           {view === "products" ? (
             <>
               <ProductOnboarding onComplete={refresh} />
-              <CatalogTable products={filteredProducts} lastScan={lastScan} />
+              <CatalogTable products={filteredProducts} lastScan={lastScan} onProductsChanged={refresh} />
               <PriceChart data={chartData} />
             </>
           ) : null}
