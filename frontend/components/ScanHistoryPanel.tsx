@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { Activity, AlertCircle, CheckCircle2, Clock3 } from "lucide-react";
 import { fetchScans } from "@/lib/api";
 import type { AgentRun } from "@/lib/types";
+import { EmptyState, ErrorPanel, GlassPanel, SectionHeader } from "@/components/ui";
 
 function statusIcon(status: AgentRun["status"]) {
   if (status === "complete") return <CheckCircle2 size={16} />;
@@ -29,18 +30,12 @@ export function ScanHistoryPanel() {
   }, []);
 
   return (
-    <section className="rounded-lg border border-white/70 bg-white/85 shadow-sm backdrop-blur">
-      <div className="flex items-center gap-2 border-b border-ink/10 px-4 py-3">
-        <Activity size={18} />
-        <div>
-          <h2 className="text-base font-semibold">Agent Scan History</h2>
-          <p className="text-xs text-ink/55">Persistent execution records for each competitor analysis run.</p>
-        </div>
-      </div>
-      {error ? <div className="border-b border-coral/20 bg-coral/10 px-4 py-3 text-sm text-coral">{error}</div> : null}
+    <GlassPanel>
+      <SectionHeader icon={<Activity size={18} />} title="Agent Scan History" description="Persistent execution records for each competitor analysis run." />
+      {error ? <div className="px-4 pb-4"><ErrorPanel message={error} onRetry={() => void refresh()} /></div> : null}
       <div className="divide-y divide-ink/10">
         {runs.length === 0 ? (
-          <p className="px-4 py-4 text-sm text-ink/55">No persisted scans yet. Run a competitor target to populate this timeline.</p>
+          <div className="p-4"><EmptyState title="No persisted scans" description="Run a competitor target to populate this timeline." /></div>
         ) : (
           runs.map((run) => (
             <div key={run.id} className="px-4 py-4">
@@ -66,6 +61,6 @@ export function ScanHistoryPanel() {
           ))
         )}
       </div>
-    </section>
+    </GlassPanel>
   );
 }

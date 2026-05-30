@@ -8,12 +8,56 @@
 
 body {
   margin: 0;
-  background: #f6f7f2;
+  background: #f7faf9;
   color: #172126;
+  font-feature-settings: "cv02", "cv03", "cv04", "cv11";
 }
 
 button,
 input,
 select {
   font: inherit;
+}
+
+button,
+a,
+input,
+select,
+textarea {
+  outline-color: #2f7d59;
+  outline-offset: 2px;
+}
+
+::selection {
+  background: rgba(47, 125, 89, 0.18);
+}
+
+@layer components {
+  .glass-panel {
+    @apply rounded-xl2 border border-white/70 bg-white/75 shadow-glass backdrop-blur-xl;
+  }
+
+  .glass-panel-subtle {
+    @apply rounded-lg border border-white/60 bg-white/60 shadow-sm backdrop-blur;
+  }
+
+  .control-input {
+    @apply h-11 rounded-lg border border-ink/10 bg-white/80 px-3 text-sm text-ink shadow-sm transition placeholder:text-ink/35 focus:border-fern focus:ring-2 focus:ring-fern/15;
+  }
+
+  .control-button {
+    @apply inline-flex h-11 items-center justify-center gap-2 rounded-lg px-4 text-sm font-semibold transition focus:ring-2 focus:ring-fern/20 disabled:cursor-not-allowed disabled:opacity-50;
+  }
+
+  .button-primary {
+    @apply control-button bg-ink text-white shadow-sm hover:-translate-y-0.5 hover:shadow-lift;
+  }
+
+  .button-secondary {
+    @apply control-button border border-ink/10 bg-white/80 text-ink hover:bg-white;
+  }
+
+  .status-badge {
+    @apply inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-xs font-semibold capitalize;
+  }
 }

@@ -5,6 +5,8 @@ import { Bot, Link2, Play, Search } from "lucide-react";
 import { AgentTimeline } from "@/components/AgentTimeline";
 import { runCompetitorScan } from "@/lib/api";
 import type { DashboardProduct, ScanResponse } from "@/lib/types";
+import { useToast } from "@/components/ToastProvider";
+import { ErrorPanel, GlassPanel, SectionHeader, StatusBadge } from "@/components/ui";
 
 type Props = {
   products: DashboardProduct[];
@@ -21,6 +23,7 @@ export function ScanPanel({ products, onComplete }: Props) {
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<ScanResponse | null>(null);
   const [timelineLogs, setTimelineLogs] = useState<string[]>([]);
+  const { notify } = useToast();
 
   const selectedProduct = useMemo(
     () => products.find((product) => product.id === productId) ?? products[0],
@@ -46,9 +49,11 @@ export function ScanPanel({ products, onComplete }: Props) {
       });
       setResult(response);
       setTimelineLogs(response.logs);
+      notify("Competitor scan completed.", "success");
       await onComplete();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Scan failed");
+      notify("Competitor scan failed.", "error");
       setTimelineLogs((current) => (current.length > 0 ? current : ["[IngestionAgent] Scan failed before graph logs returned."]));
     } finally {
       setBusy(false);
@@ -56,26 +61,20 @@ export function ScanPanel({ products, onComplete }: Props) {
   }
 
   return (
-    <section className="rounded-lg border border-white/70 bg-white/85 shadow-sm backdrop-blur">
-      <div className="flex flex-col gap-3 border-b border-ink/10 px-4 py-4 md:flex-row md:items-center md:justify-between">
-        <div className="flex items-center gap-2">
-          <Bot size={18} />
-          <div>
-            <h2 className="text-base font-semibold">Competitor URL Ingest</h2>
-            <p className="text-xs text-ink/55">Run a one-off market check against any competitor product page.</p>
-          </div>
-        </div>
-        <span className="border border-ink/15 bg-mist px-3 py-2 text-xs font-semibold text-ink/65">
-          Real Jina + Gemini execution
-        </span>
-      </div>
+    <GlassPanel>
+      <SectionHeader
+        icon={<Bot size={18} />}
+        title="Competitor URL Ingest"
+        description="Run a one-off market check against any competitor product page."
+        action={<StatusBadge tone="info">Real Jina + Gemini</StatusBadge>}
+      />
       <form onSubmit={submit} className="grid gap-3 p-4 md:grid-cols-[1fr_1fr]">
         <label className="grid gap-1 text-sm">
           <span className="font-semibold text-ink/70">Tracked product</span>
           <select
             value={selectedProduct?.id ?? ""}
             onChange={(event) => setProductId(event.currentTarget.value)}
-            className="h-10 rounded-md border border-ink/15 bg-white px-3"
+            className="control-input"
           >
             {products.map((product) => (
               <option key={product.id} value={product.id}>
@@ -89,7 +88,7 @@ export function ScanPanel({ products, onComplete }: Props) {
           <input
             value={competitorName}
             onChange={(event) => setCompetitorName(event.currentTarget.value)}
-            className="h-10 rounded-md border border-ink/15 px-3"
+            className="control-input"
             placeholder="Amazon, Best Buy, Shopify test store"
           />
         </label>
@@ -104,7 +103,7 @@ export function ScanPanel({ products, onComplete }: Props) {
               type="url"
               value={url}
               onChange={(event) => setUrl(event.currentTarget.value)}
-              className="h-10 min-w-0 flex-1 rounded-r-md border border-ink/15 px-3"
+              className="control-input min-w-0 flex-1 rounded-l-none"
               placeholder="https://example-store.com/products/item"
             />
           </div>
@@ -112,14 +111,14 @@ export function ScanPanel({ products, onComplete }: Props) {
         <button
           type="submit"
           disabled={busy || products.length === 0}
-          className="inline-flex h-10 items-center justify-center gap-2 rounded-md bg-ink px-4 text-sm font-semibold text-white disabled:opacity-50 md:w-fit"
+          className="button-primary md:w-fit"
         >
           {busy ? <Search size={17} className="animate-pulse" /> : <Play size={17} />}
           {busy ? "Scanning..." : "Run Scan"}
         </button>
       </form>
       <AgentTimeline logs={timelineLogs} busy={busy} failed={Boolean(error)} />
-      {error ? <div className="border-t border-coral/20 bg-coral/10 px-4 py-3 text-sm text-coral">{error}</div> : null}
+      {error ? <div className="border-t border-ink/10 p-4"><ErrorPanel message={error} /></div> : null}
       {result ? (
         <div className="grid gap-3 border-t border-ink/10 bg-mist p-4 text-sm md:grid-cols-4">
           <div>
@@ -168,6 +167,6 @@ export function ScanPanel({ products, onComplete }: Props) {
           ) : null}
         </div>
       ) : null}
-    </section>
+    </GlassPanel>
   );
 }

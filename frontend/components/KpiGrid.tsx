@@ -3,6 +3,7 @@
 import { motion } from "framer-motion";
 import { Activity, AlertTriangle, BarChart3, Boxes, Crosshair, Target } from "lucide-react";
 import type { AnalyticsSummary } from "@/lib/types";
+import { SkeletonBlock } from "@/components/ui";
 
 type Props = {
   summary: AnalyticsSummary | null;
@@ -11,6 +12,16 @@ type Props = {
 const iconClass = "h-5 w-5";
 
 export function KpiGrid({ summary }: Props) {
+  if (!summary) {
+    return (
+      <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-6">
+        {Array.from({ length: 6 }).map((_, index) => (
+          <SkeletonBlock key={index} className="h-36" />
+        ))}
+      </section>
+    );
+  }
+
   const items = [
     { label: "Products Tracked", value: summary?.total_products ?? 0, icon: <Boxes className={iconClass} />, tone: "text-fern" },
     { label: "Active Products", value: summary?.active_products ?? 0, icon: <Target className={iconClass} />, tone: "text-brass" },
@@ -34,7 +45,7 @@ export function KpiGrid({ summary }: Props) {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: index * 0.035 }}
           whileHover={{ y: -2 }}
-          className="rounded-lg border border-white/70 bg-white/85 p-4 shadow-sm backdrop-blur"
+          className="glass-panel p-4"
         >
           <div className={`mb-4 inline-grid h-10 w-10 place-items-center rounded-md bg-mist ${item.tone}`}>{item.icon}</div>
           <p className="text-2xl font-semibold">{item.value}</p>

@@ -4,6 +4,8 @@ import { FormEvent, useEffect, useMemo, useState } from "react";
 import { Crosshair, Link2, Pause, Play, Plus, Trash2 } from "lucide-react";
 import { createCompetitor, createCompetitorTarget, deleteCompetitor, fetchCompetitors, fetchCompetitorTargets, runCompetitorTargetScan, updateCompetitor } from "@/lib/api";
 import type { Competitor, CompetitorTarget, DashboardProduct, ScanResponse } from "@/lib/types";
+import { useToast } from "@/components/ToastProvider";
+import { EmptyState, ErrorPanel, GlassPanel, SectionHeader, StatusBadge } from "@/components/ui";
 
 type Props = {
   products: DashboardProduct[];
@@ -22,6 +24,7 @@ export function CompetitorTargetManager({ products, onScanComplete }: Props) {
   const [busyTargetId, setBusyTargetId] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { notify } = useToast();
 
   const selectedProductId = useMemo(() => productId || products[0]?.id || "", [productId, products]);
 
@@ -33,6 +36,7 @@ export function CompetitorTargetManager({ products, onScanComplete }: Props) {
       setError(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Unable to load competitor targets");
+      notify("Unable to load competitor targets.", "error");
     }
   }
 
@@ -53,9 +57,11 @@ export function CompetitorTargetManager({ products, onScanComplete }: Props) {
       });
       setCompetitorName("");
       setCompetitorUrl("");
+      notify("Competitor target added.", "success");
       await refreshTargets();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Unable to add competitor target");
+      notify("Competitor target could not be saved.", "error");
     } finally {
       setSaving(false);
     }
@@ -67,9 +73,11 @@ export function CompetitorTargetManager({ products, onScanComplete }: Props) {
     try {
       const result = await runCompetitorTargetScan(target.id);
       await onScanComplete(result);
+      notify("Competitor scan completed.", "success");
       await refreshTargets();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Target scan failed");
+      notify("Target scan failed.", "error");
     } finally {
       setBusyTargetId(null);
     }
@@ -98,9 +106,11 @@ export function CompetitorTargetManager({ products, onScanComplete }: Props) {
         });
         setCompetitorId(created.id);
       }
+      notify("Competitor saved.", "success");
       await refreshTargets();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Unable to save competitor");
+      notify("Competitor could not be saved.", "error");
     } finally {
       setSaving(false);
     }
@@ -111,21 +121,17 @@ export function CompetitorTargetManager({ products, onScanComplete }: Props) {
     try {
       await deleteCompetitor(id);
       if (competitorId === id) setCompetitorId("");
+      notify("Competitor deleted.", "success");
       await refreshTargets();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Unable to delete competitor");
+      notify("Competitor delete failed.", "error");
     }
   }
 
   return (
-    <section className="rounded-lg border border-white/70 bg-white/85 shadow-sm backdrop-blur">
-      <div className="flex items-center gap-2 border-b border-ink/10 px-4 py-3">
-        <Crosshair size={18} />
-        <div>
-          <h2 className="text-base font-semibold">Competitor Targets</h2>
-          <p className="text-xs text-ink/55">Persist URLs once, then run analysis whenever the market moves.</p>
-        </div>
-      </div>
+    <GlassPanel>
+      <SectionHeader icon={<Crosshair size={18} />} title="Competitor Targets" description="Persist URLs once, then run analysis whenever the market moves." />
       <div className="grid gap-3 border-b border-ink/10 p-4 lg:grid-cols-[1fr_1fr_1fr_auto]">
         <select
           value={competitorId}
@@ -139,7 +145,7 @@ export function CompetitorTargetManager({ products, onScanComplete }: Props) {
               setCompetitorCategory(selected.category ?? "");
             }
           }}
-          className="h-10 rounded-md border border-ink/15 bg-white px-3 text-sm"
+          className="control-input"
           aria-label="Saved competitor"
         >
           <option value="">New competitor</option>
@@ -154,27 +160,27 @@ export function CompetitorTargetManager({ products, onScanComplete }: Props) {
           value={competitorName}
           onChange={(event) => setCompetitorName(event.currentTarget.value)}
           placeholder="Competitor name"
-          className="h-10 rounded-md border border-ink/15 px-3 text-sm"
+          className="control-input"
         />
         <input
           type="url"
           value={competitorWebsite}
           onChange={(event) => setCompetitorWebsite(event.currentTarget.value)}
           placeholder="https://competitor.com"
-          className="h-10 rounded-md border border-ink/15 px-3 text-sm"
+          className="control-input"
         />
         <div className="flex gap-2">
           <input
             value={competitorCategory}
             onChange={(event) => setCompetitorCategory(event.currentTarget.value)}
             placeholder="Group"
-            className="h-10 min-w-0 flex-1 rounded-md border border-ink/15 px-3 text-sm"
+            className="control-input min-w-0 flex-1"
           />
           <button
             type="button"
             onClick={() => void saveCompetitor()}
             disabled={saving}
-            className="h-10 rounded-md bg-ink px-3 text-sm font-semibold text-white disabled:opacity-50"
+            className="button-primary"
           >
             Save
           </button>
@@ -184,7 +190,7 @@ export function CompetitorTargetManager({ products, onScanComplete }: Props) {
         <select
           value={selectedProductId}
           onChange={(event) => setProductId(event.currentTarget.value)}
-          className="h-10 rounded-md border border-ink/15 bg-white px-3 text-sm"
+          className="control-input"
           aria-label="Tracked product"
           required
         >
@@ -210,13 +216,13 @@ export function CompetitorTargetManager({ products, onScanComplete }: Props) {
         <button
           type="submit"
           disabled={saving || products.length === 0}
-          className="inline-flex h-10 items-center justify-center gap-2 rounded-md bg-ink px-4 text-sm font-semibold text-white disabled:opacity-50"
+          className="button-primary"
         >
           <Plus size={17} />
           {saving ? "Saving..." : "Add Target"}
         </button>
       </form>
-      {error ? <div className="border-t border-coral/20 bg-coral/10 px-4 py-3 text-sm text-coral">{error}</div> : null}
+      {error ? <div className="px-4 pb-4"><ErrorPanel message={error} onRetry={() => void refreshTargets()} /></div> : null}
       <div className="divide-y divide-ink/10 border-t border-ink/10">
         {competitors.length > 0 ? (
           <div className="grid gap-2 px-4 py-3 sm:grid-cols-2 xl:grid-cols-3">
@@ -239,12 +245,15 @@ export function CompetitorTargetManager({ products, onScanComplete }: Props) {
           </div>
         ) : null}
         {targets.length === 0 ? (
-          <p className="px-4 py-4 text-sm text-ink/55">No competitor targets yet. Add one above to start continuous monitoring.</p>
+          <div className="p-4">
+            <EmptyState title="No competitor targets" description="Add a product URL to start continuous market monitoring." />
+          </div>
         ) : (
           targets.map((target) => (
             <div key={target.id} className="grid gap-3 px-4 py-3 text-sm lg:grid-cols-[1fr_1.4fr_auto] lg:items-center">
               <div>
                 <p className="font-semibold">{target.competitor_name}</p>
+                <div className="mt-1"><StatusBadge tone={target.status === "active" ? "success" : "neutral"}>{target.status}</StatusBadge></div>
                 <p className="text-xs text-ink/55">
                   {target.last_checked_at
                     ? `Last checked ${new Date(target.last_checked_at).toLocaleString()}`
@@ -258,7 +267,7 @@ export function CompetitorTargetManager({ products, onScanComplete }: Props) {
                 type="button"
                 onClick={() => void runTarget(target)}
                 disabled={busyTargetId !== null}
-                className="inline-flex h-9 items-center justify-center gap-2 border border-ink/15 bg-mist px-3 font-semibold text-ink disabled:opacity-50"
+                className="button-secondary h-9"
               >
                 {busyTargetId === target.id ? <Pause size={16} /> : <Play size={16} />}
                 {busyTargetId === target.id ? "Scanning..." : "Run Scan"}
@@ -267,6 +276,6 @@ export function CompetitorTargetManager({ products, onScanComplete }: Props) {
           ))
         )}
       </div>
-    </section>
+    </GlassPanel>
   );
 }

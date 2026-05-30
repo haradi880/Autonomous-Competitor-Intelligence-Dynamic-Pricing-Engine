@@ -13,8 +13,10 @@ import { ProductOnboarding } from "@/components/ProductOnboarding";
 import { ScanHistoryPanel } from "@/components/ScanHistoryPanel";
 import { ScanPanel } from "@/components/ScanPanel";
 import { SubmissionChecklist } from "@/components/SubmissionChecklist";
+import { ErrorPanel, LoadingLabel, SkeletonBlock } from "@/components/ui";
 import { apiBase, fetchAnalyticsSummary, fetchDashboard, updateSettings } from "@/lib/api";
 import type { AnalyticsSummary, ChartPoint, DashboardState, ScanResponse } from "@/lib/types";
+import { useToast } from "@/components/ToastProvider";
 
 type View = "overview" | "products" | "competitors" | "scans" | "alerts" | "readiness";
 
@@ -37,6 +39,7 @@ export function CommandCenter({ view }: Props) {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [query, setQuery] = useState("");
+  const { notify } = useToast();
 
   async function refresh(): Promise<void> {
     try {
@@ -51,6 +54,7 @@ export function CommandCenter({ view }: Props) {
           ? `${err.message}. If Render is waking from sleep, wait a few seconds and refresh.`
           : "Unknown dashboard error"
       );
+      notify("Dashboard data could not be refreshed. Check backend availability.", "error");
     } finally {
       setLoading(false);
     }
@@ -96,8 +100,12 @@ export function CommandCenter({ view }: Props) {
       settings={state.settings}
       onChange={(next) => {
         setState((current) => ({ ...current, settings: next }));
-        void updateSettings(next).then(refresh).catch((err: unknown) => {
+        void updateSettings(next).then(() => {
+          notify(`Autopilot ${next.autopilot ? "enabled" : "disabled"} with ${Math.round(next.minimum_margin_rate * 100)}% margin floor.`, "success");
+          return refresh();
+        }).catch((err: unknown) => {
           setError(err instanceof Error ? err.message : "Settings update failed");
+          notify("Settings update failed.", "error");
         });
       }}
     />
@@ -138,10 +146,15 @@ export function CommandCenter({ view }: Props) {
               </button>
             </div>
           </div>
-          {error ? <div className="border border-coral/30 bg-coral/10 px-4 py-3 text-sm text-coral">{error}</div> : null}
+          {error ? <ErrorPanel message={error} onRetry={() => void refresh()} /> : null}
           {loading && state.products.length === 0 ? (
-            <div className="border border-brass/30 bg-brass/10 px-4 py-3 text-sm text-brass">
-              Warming the hosted backend and loading Supabase dashboard data...
+            <div className="glass-panel-subtle p-4">
+              <LoadingLabel label="Warming hosted backend and loading Supabase dashboard data..." />
+              <div className="mt-4 grid gap-3 md:grid-cols-3">
+                <SkeletonBlock className="h-24" />
+                <SkeletonBlock className="h-24" />
+                <SkeletonBlock className="h-24" />
+              </div>
             </div>
           ) : null}
 

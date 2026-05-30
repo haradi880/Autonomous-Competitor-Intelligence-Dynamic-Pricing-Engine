@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { motion } from "framer-motion";
-import { Activity, AlertTriangle, Boxes, ChevronLeft, ChevronRight, Crosshair, FileCheck2, Gauge, Menu, X } from "lucide-react";
+import { Activity, AlertTriangle, Boxes, ChevronLeft, ChevronRight, Circle, Crosshair, FileCheck2, Gauge, Menu, X } from "lucide-react";
 import { useState } from "react";
 
 const navItems = [
@@ -21,7 +21,7 @@ export function AppShell({ children }: Readonly<{ children: React.ReactNode }>) 
   const [mobileOpen, setMobileOpen] = useState(false);
 
   const nav = (
-    <nav className="mt-6 space-y-1">
+    <nav className="mt-6 space-y-1" aria-label="Primary navigation">
       {navItems.map((item) => {
         const active = pathname === item.href;
         return (
@@ -29,7 +29,8 @@ export function AppShell({ children }: Readonly<{ children: React.ReactNode }>) 
             key={item.href}
             href={item.href}
             onClick={() => setMobileOpen(false)}
-            className={`group relative flex h-11 items-center gap-3 rounded-md px-3 text-sm font-semibold transition ${
+            aria-current={active ? "page" : undefined}
+            className={`group relative flex h-11 items-center gap-3 rounded-lg px-3 text-sm font-semibold transition ${
               active ? "bg-white text-ink shadow-sm" : "text-white/70 hover:bg-white/10 hover:text-white"
             }`}
           >
@@ -43,7 +44,7 @@ export function AppShell({ children }: Readonly<{ children: React.ReactNode }>) 
   );
 
   return (
-    <div className="min-h-screen bg-[radial-gradient(circle_at_top_left,#e9f4ef,transparent_35%),#f6f7f2]">
+    <div className="min-h-screen bg-[radial-gradient(circle_at_top_left,#dff1e9,transparent_32%),radial-gradient(circle_at_top_right,#eceaff,transparent_26%),#f7faf9]">
       <button
         type="button"
         aria-label="Open navigation"
@@ -58,6 +59,7 @@ export function AppShell({ children }: Readonly<{ children: React.ReactNode }>) 
           <motion.aside
             initial={{ x: -280 }}
             animate={{ x: 0 }}
+            exit={{ x: -280 }}
             className="h-full w-72 bg-ink px-4 py-4 text-white shadow-2xl"
           >
             <div className="flex items-center justify-between">
@@ -100,6 +102,21 @@ export function AppShell({ children }: Readonly<{ children: React.ReactNode }>) 
           </button>
         </div>
         {nav}
+        <div className="absolute inset-x-3 bottom-4 rounded-xl border border-white/10 bg-white/10 p-3">
+          <div className="flex items-center gap-2 text-xs font-semibold text-white/80">
+            <Circle size={9} className="fill-fern text-fern" />
+            {!collapsed ? "Systems online" : null}
+          </div>
+          {!collapsed ? (
+            <div className="mt-3 flex items-center gap-3">
+              <div className="grid h-9 w-9 place-items-center rounded-full bg-white text-sm font-bold text-ink">AI</div>
+              <div>
+                <p className="text-sm font-semibold">Pricing Ops</p>
+                <p className="text-xs text-white/45">Autonomous console</p>
+              </div>
+            </div>
+          ) : null}
+        </div>
       </aside>
 
       <div className={`transition-all ${collapsed ? "md:pl-20" : "md:pl-72"}`}>

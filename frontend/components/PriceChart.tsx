@@ -12,6 +12,7 @@ import {
   YAxis
 } from "recharts";
 import type { ChartPoint } from "@/lib/types";
+import { EmptyState, GlassPanel, SectionHeader } from "@/components/ui";
 
 type Props = {
   data: ChartPoint[];
@@ -25,22 +26,11 @@ export function PriceChart({ data }: Props) {
   }, []);
 
   return (
-    <section className="rounded-lg border border-white/70 bg-white/85 p-4 shadow-sm backdrop-blur">
-      <div className="mb-4 flex flex-col gap-1 md:flex-row md:items-end md:justify-between">
-        <div>
-          <h2 className="text-base font-semibold">Pricing Trajectory</h2>
-          <p className="text-xs text-ink/55">Your price vs competitor signal over recent pricing checkpoints</p>
-        </div>
-        <div className="text-xs font-semibold text-ink/55">{data.length} checkpoints</div>
-      </div>
+    <GlassPanel className="p-4">
+      <SectionHeader title="Pricing Trajectory" description="Your price vs competitor signal over recent pricing checkpoints." action={<div className="text-xs font-semibold text-ink/55">{data.length} checkpoints</div>} />
       <div className="h-72">
         {data.length === 0 ? (
-          <div className="grid h-full place-items-center border border-dashed border-ink/15 bg-mist px-4 text-center">
-            <div>
-              <p className="font-semibold text-ink">No pricing history yet</p>
-              <p className="mt-1 text-sm text-ink/60">Run a competitor scan to create the first real pricing checkpoint.</p>
-            </div>
-          </div>
+          <EmptyState title="No pricing history yet" description="Run a competitor scan to create the first real pricing checkpoint." />
         ) : mounted ? (
           <ResponsiveContainer width="100%" height="100%">
             <LineChart data={data} margin={{ top: 10, right: 20, left: 0, bottom: 0 }}>
@@ -69,6 +59,6 @@ export function PriceChart({ data }: Props) {
           <div className="h-full w-full bg-mist" />
         )}
       </div>
-    </section>
+    </GlassPanel>
   );
 }
