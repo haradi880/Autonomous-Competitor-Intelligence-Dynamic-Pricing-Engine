@@ -4,16 +4,45 @@ create extension if not exists vector;
 create table if not exists tracked_products (
   id uuid primary key default uuid_generate_v4(),
   title text not null,
+  sku text,
+  category text,
+  brand text,
+  description text,
   base_cost numeric(12, 2) not null check (base_cost > 0),
   current_price numeric(12, 2) not null check (current_price > 0),
+  target_margin numeric(5, 4),
+  status text not null default 'active' check (status in ('active', 'archived')),
   created_at timestamp with time zone not null default now()
 );
+
+alter table tracked_products add column if not exists sku text;
+alter table tracked_products add column if not exists category text;
+alter table tracked_products add column if not exists brand text;
+alter table tracked_products add column if not exists description text;
+alter table tracked_products add column if not exists target_margin numeric(5, 4);
+alter table tracked_products add column if not exists status text not null default 'active';
 
 alter table tracked_products enable row level security;
 
 drop policy if exists "tracked_products_read" on tracked_products;
 create policy "tracked_products_read"
   on tracked_products for select
+  using (true);
+
+create table if not exists competitors (
+  id uuid primary key default uuid_generate_v4(),
+  name text not null,
+  website text,
+  category text,
+  status text not null default 'active' check (status in ('active', 'paused')),
+  created_at timestamp with time zone not null default now()
+);
+
+alter table competitors enable row level security;
+
+drop policy if exists "competitors_read" on competitors;
+create policy "competitors_read"
+  on competitors for select
   using (true);
 
 create table if not exists competitor_products (
@@ -50,12 +79,15 @@ create policy "competitor_products_read"
 create table if not exists competitor_targets (
   id uuid primary key default uuid_generate_v4(),
   product_id uuid not null references tracked_products(id) on delete cascade,
+  competitor_id uuid references competitors(id) on delete set null,
   competitor_name text not null,
   competitor_url text not null,
   status text not null default 'active' check (status in ('active', 'paused')),
   last_checked_at timestamp with time zone,
   created_at timestamp with time zone not null default now()
 );
+
+alter table competitor_targets add column if not exists competitor_id uuid references competitors(id) on delete set null;
 
 alter table competitor_targets enable row level security;
 
@@ -139,6 +171,12 @@ create index if not exists competitor_products_embedding_hnsw_idx
 
 create index if not exists competitor_targets_product_idx
   on competitor_targets (product_id);
+
+create index if not exists competitors_status_idx
+  on competitors (status);
+
+create index if not exists tracked_products_status_idx
+  on tracked_products (status);
 
 create index if not exists agent_runs_product_created_idx
   on agent_runs (product_id, created_at desc);

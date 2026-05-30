@@ -1,5 +1,6 @@
 import asyncio
 import logging
+import random
 
 import httpx
 from google import genai
@@ -35,15 +36,26 @@ async def fetch_markdown_from_jina(target_url: str) -> str:
     reader_url = f"https://r.jina.ai/{target_url}"
     logger.info("Fetching competitor markdown through Jina Reader", extra={"url": target_url})
     async with httpx.AsyncClient(timeout=settings.request_timeout_seconds, follow_redirects=True) as client:
-        try:
-            response = await client.get(reader_url, headers={"Accept": "text/markdown"})
-            response.raise_for_status()
-        except httpx.HTTPStatusError as exc:
-            fallback = _fixture_markdown_for_url(target_url) if settings.enable_demo_fallbacks else None
-            if exc.response.status_code in {429, 451, 502, 503, 504} and fallback is not None:
-                logger.warning("Jina unavailable/rate-limited; using local fixture fallback")
-                return fallback
-            raise
+        last_error: Exception | None = None
+        for attempt in range(3):
+            try:
+                response = await client.get(reader_url, headers={"Accept": "text/markdown"})
+                response.raise_for_status()
+                break
+            except (httpx.HTTPStatusError, httpx.TimeoutException, httpx.TransportError) as exc:
+                last_error = exc
+                if isinstance(exc, httpx.HTTPStatusError):
+                    fallback = _fixture_markdown_for_url(target_url) if settings.enable_demo_fallbacks else None
+                    if exc.response.status_code in {429, 451, 502, 503, 504} and fallback is not None:
+                        logger.warning("Jina unavailable/rate-limited; using local fixture fallback")
+                        return fallback
+                    if exc.response.status_code < 500 and exc.response.status_code != 429:
+                        raise
+                if attempt == 2:
+                    raise
+                await asyncio.sleep((1.4 * (attempt + 1)) + random.random())
+        else:
+            raise RuntimeError(f"Jina Reader failed: {last_error}")
     markdown = response.text.strip()
     if len(markdown) < 80:
         raise ValueError("Jina Reader returned insufficient page content for reliable extraction")

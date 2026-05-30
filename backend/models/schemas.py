@@ -13,6 +13,11 @@ class ProductIn(StrictBaseModel):
     title: str = Field(min_length=3, max_length=240)
     base_cost: float = Field(gt=0)
     current_price: float = Field(gt=0)
+    sku: str | None = Field(default=None, max_length=80)
+    category: str | None = Field(default=None, max_length=120)
+    brand: str | None = Field(default=None, max_length=120)
+    description: str | None = Field(default=None, max_length=1200)
+    target_margin: float | None = Field(default=None, ge=0.01, le=0.8)
 
     @field_validator("current_price")
     @classmethod
@@ -25,6 +30,31 @@ class ProductIn(StrictBaseModel):
 
 class Product(ProductIn):
     id: UUID = Field(default_factory=uuid4)
+    status: Literal["active", "archived"] = "active"
+
+
+class ProductUpdate(StrictBaseModel):
+    title: str | None = Field(default=None, min_length=3, max_length=240)
+    base_cost: float | None = Field(default=None, gt=0)
+    current_price: float | None = Field(default=None, gt=0)
+    sku: str | None = Field(default=None, max_length=80)
+    category: str | None = Field(default=None, max_length=120)
+    brand: str | None = Field(default=None, max_length=120)
+    description: str | None = Field(default=None, max_length=1200)
+    target_margin: float | None = Field(default=None, ge=0.01, le=0.8)
+    status: Literal["active", "archived"] | None = None
+
+
+class CompetitorIn(StrictBaseModel):
+    name: str = Field(min_length=2, max_length=120)
+    website: HttpUrl | None = None
+    category: str | None = Field(default=None, max_length=120)
+    status: Literal["active", "paused"] = "active"
+
+
+class Competitor(CompetitorIn):
+    id: UUID = Field(default_factory=uuid4)
+    created_at: datetime = Field(default_factory=datetime.utcnow)
 
 
 class CompetitorUrlInput(StrictBaseModel):
@@ -37,6 +67,7 @@ class CompetitorTargetIn(StrictBaseModel):
     product_id: UUID
     competitor_name: str = Field(min_length=2, max_length=120)
     competitor_url: HttpUrl
+    competitor_id: UUID | None = None
 
 
 class CompetitorTarget(CompetitorTargetIn):
@@ -93,6 +124,12 @@ class PricingDecision(StrictBaseModel):
     match_distance: float | None = None
     match_confidence: float | None = Field(default=None, ge=0, le=1)
     price_to_spec_ratio: float | None = None
+    stock_signal: str | None = None
+    trend_signal: str | None = None
+    volatility_score: float | None = Field(default=None, ge=0, le=1)
+    spec_score: float | None = Field(default=None, ge=0, le=1)
+    confidence_score: float | None = Field(default=None, ge=0, le=1)
+    reasoning: list[str] = Field(default_factory=list)
 
 
 class ScanResponse(StrictBaseModel):
@@ -142,10 +179,32 @@ class DashboardProduct(StrictBaseModel):
     title: str
     base_cost: float
     current_price: float
+    sku: str | None = None
+    category: str | None = None
+    brand: str | None = None
+    description: str | None = None
+    target_margin: float | None = None
+    status: Literal["active", "archived"] = "active"
     competitor_price: float | None = None
     competitor_name: str | None = None
     margin_rate: float
     floor_hit: bool
+
+
+class AnalyticsSummary(StrictBaseModel):
+    total_products: int
+    active_products: int
+    active_competitors: int
+    average_price_gap: float | None = None
+    recent_scans: int
+    average_match_confidence: float | None = None
+    active_alerts: int
+
+
+class TrendPoint(StrictBaseModel):
+    label: str
+    value: float
+    secondary_value: float | None = None
 
 
 class DashboardState(StrictBaseModel):

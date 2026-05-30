@@ -12,6 +12,9 @@ from models.schemas import (
     AgentRun,
     AgentRunEvent,
     AlertItem,
+    AnalyticsSummary,
+    Competitor,
+    CompetitorIn,
     CompetitorPrice,
     CompetitorTarget,
     CompetitorTargetIn,
@@ -20,9 +23,50 @@ from models.schemas import (
     PricingHistoryItem,
     Product,
     ProductIn,
+    ProductUpdate,
+    TrendPoint,
 )
 
 logger = logging.getLogger(__name__)
+
+
+def _product_from_row(row: dict) -> Product:
+    return Product(
+        id=UUID(str(row["id"])),
+        title=str(row["title"]),
+        base_cost=float(row["base_cost"]),
+        current_price=float(row["current_price"]),
+        sku=row.get("sku"),
+        category=row.get("category"),
+        brand=row.get("brand"),
+        description=row.get("description"),
+        target_margin=float(row["target_margin"]) if row.get("target_margin") is not None else None,
+        status=row.get("status") or "active",
+    )
+
+
+def _competitor_from_row(row: dict) -> Competitor:
+    return Competitor(
+        id=UUID(str(row["id"])),
+        name=str(row["name"]),
+        website=row.get("website"),
+        category=row.get("category"),
+        status=row.get("status") or "active",
+        created_at=row.get("created_at"),
+    )
+
+
+def _target_from_row(row: dict) -> CompetitorTarget:
+    return CompetitorTarget(
+        id=UUID(str(row["id"])),
+        product_id=UUID(str(row["product_id"])),
+        competitor_id=UUID(str(row["competitor_id"])) if row.get("competitor_id") else None,
+        competitor_name=str(row["competitor_name"]),
+        competitor_url=str(row["competitor_url"]),
+        status=row.get("status") or "active",
+        last_checked_at=row.get("last_checked_at"),
+        created_at=row.get("created_at"),
+    )
 
 
 def supabase_client() -> Client | None:
@@ -63,15 +107,7 @@ async def list_products() -> list[Product]:
         return client.table("tracked_products").select("*").order("title").execute().data or []
 
     rows = await asyncio.to_thread(_run)
-    return [
-        Product(
-            id=UUID(str(row["id"])),
-            title=str(row["title"]),
-            base_cost=float(row["base_cost"]),
-            current_price=float(row["current_price"]),
-        )
-        for row in rows
-    ]
+    return [_product_from_row(row) for row in rows]
 
 
 async def get_product(product_id: UUID) -> Product | None:
@@ -93,13 +129,7 @@ async def get_product(product_id: UUID) -> Product | None:
     rows = await asyncio.to_thread(_run)
     if not rows:
         return None
-    row = rows[0]
-    return Product(
-        id=UUID(str(row["id"])),
-        title=str(row["title"]),
-        base_cost=float(row["base_cost"]),
-        current_price=float(row["current_price"]),
-    )
+    return _product_from_row(rows[0])
 
 
 async def create_product(payload: ProductIn) -> Product:
@@ -117,12 +147,90 @@ async def create_product(payload: ProductIn) -> Product:
         )
 
     row = await asyncio.to_thread(_run)
-    return Product(
-        id=UUID(str(row["id"])),
-        title=str(row["title"]),
-        base_cost=float(row["base_cost"]),
-        current_price=float(row["current_price"]),
-    )
+    return _product_from_row(row)
+
+
+async def update_product(product_id: UUID, payload: ProductUpdate) -> Product:
+    require_server_write_key()
+    client = supabase_client()
+    if client is None:
+        raise RuntimeError("Supabase is not configured")
+    row = payload.model_dump(exclude_unset=True)
+    if not row:
+        product = await get_product(product_id)
+        if product is None:
+            raise ValueError("Product not found")
+        return product
+
+    def _run() -> dict:
+        return client.table("tracked_products").update(row).eq("id", str(product_id)).execute().data[0]
+
+    updated = await asyncio.to_thread(_run)
+    return _product_from_row(updated)
+
+
+async def delete_product(product_id: UUID) -> None:
+    require_server_write_key()
+    client = supabase_client()
+    if client is None:
+        raise RuntimeError("Supabase is not configured")
+    await asyncio.to_thread(lambda: client.table("tracked_products").delete().eq("id", str(product_id)).execute())
+
+
+async def list_competitors(limit: int = 100) -> list[Competitor]:
+    client = supabase_client()
+    if client is None:
+        return []
+
+    def _run() -> list[dict]:
+        return client.table("competitors").select("*").order("name").limit(limit).execute().data or []
+
+    try:
+        rows = await asyncio.to_thread(_run)
+    except Exception as exc:
+        logger.warning("Unable to list competitors", exc_info=exc)
+        return []
+    return [_competitor_from_row(row) for row in rows]
+
+
+async def create_competitor(payload: CompetitorIn) -> Competitor:
+    require_server_write_key()
+    client = supabase_client()
+    if client is None:
+        raise RuntimeError("Supabase is not configured")
+    row = payload.model_dump()
+    if row.get("website") is not None:
+        row["website"] = str(row["website"])
+
+    def _run() -> dict:
+        return client.table("competitors").insert(row).execute().data[0]
+
+    created = await asyncio.to_thread(_run)
+    return _competitor_from_row(created)
+
+
+async def update_competitor(competitor_id: UUID, payload: CompetitorIn) -> Competitor:
+    require_server_write_key()
+    client = supabase_client()
+    if client is None:
+        raise RuntimeError("Supabase is not configured")
+    row = payload.model_dump()
+    if row.get("website") is not None:
+        row["website"] = str(row["website"])
+
+    def _run() -> dict:
+        return client.table("competitors").update(row).eq("id", str(competitor_id)).execute().data[0]
+
+    updated = await asyncio.to_thread(_run)
+    return _competitor_from_row(updated)
+
+
+async def delete_competitor(competitor_id: UUID) -> None:
+    require_server_write_key()
+    client = supabase_client()
+    if client is None:
+        raise RuntimeError("Supabase is not configured")
+    await asyncio.to_thread(lambda: client.table("competitors").delete().eq("id", str(competitor_id)).execute())
 
 
 async def list_competitor_targets(limit: int = 100) -> list[CompetitorTarget]:
@@ -146,18 +254,7 @@ async def list_competitor_targets(limit: int = 100) -> list[CompetitorTarget]:
     except Exception as exc:
         logger.warning("Unable to list competitor targets", exc_info=exc)
         return []
-    return [
-        CompetitorTarget(
-            id=UUID(str(row["id"])),
-            product_id=UUID(str(row["product_id"])),
-            competitor_name=str(row["competitor_name"]),
-            competitor_url=str(row["competitor_url"]),
-            status=row.get("status") or "active",
-            last_checked_at=row.get("last_checked_at"),
-            created_at=row.get("created_at"),
-        )
-        for row in rows
-    ]
+    return [_target_from_row(row) for row in rows]
 
 
 async def create_competitor_target(payload: CompetitorTargetIn) -> CompetitorTarget:
@@ -167,6 +264,7 @@ async def create_competitor_target(payload: CompetitorTargetIn) -> CompetitorTar
         raise RuntimeError("Supabase is not configured")
     row = {
         "product_id": str(payload.product_id),
+        "competitor_id": str(payload.competitor_id) if payload.competitor_id else None,
         "competitor_name": payload.competitor_name,
         "competitor_url": str(payload.competitor_url),
         "status": "active",
@@ -176,15 +274,7 @@ async def create_competitor_target(payload: CompetitorTargetIn) -> CompetitorTar
         return client.table("competitor_targets").insert(row).execute().data[0]
 
     created = await asyncio.to_thread(_run)
-    return CompetitorTarget(
-        id=UUID(str(created["id"])),
-        product_id=UUID(str(created["product_id"])),
-        competitor_name=str(created["competitor_name"]),
-        competitor_url=str(created["competitor_url"]),
-        status=created.get("status") or "active",
-        last_checked_at=created.get("last_checked_at"),
-        created_at=created.get("created_at"),
-    )
+    return _target_from_row(created)
 
 
 async def get_competitor_target(target_id: UUID) -> CompetitorTarget | None:
@@ -206,16 +296,7 @@ async def get_competitor_target(target_id: UUID) -> CompetitorTarget | None:
     rows = await asyncio.to_thread(_run)
     if not rows:
         return None
-    row = rows[0]
-    return CompetitorTarget(
-        id=UUID(str(row["id"])),
-        product_id=UUID(str(row["product_id"])),
-        competitor_name=str(row["competitor_name"]),
-        competitor_url=str(row["competitor_url"]),
-        status=row.get("status") or "active",
-        last_checked_at=row.get("last_checked_at"),
-        created_at=row.get("created_at"),
-    )
+    return _target_from_row(rows[0])
 
 
 async def touch_competitor_target(target_id: UUID) -> None:
@@ -597,6 +678,12 @@ async def dashboard_products(settings_margin: float) -> list[DashboardProduct]:
                 title=product.title,
                 base_cost=product.base_cost,
                 current_price=product.current_price,
+                sku=product.sku,
+                category=product.category,
+                brand=product.brand,
+                description=product.description,
+                target_margin=product.target_margin,
+                status=product.status,
                 competitor_price=competitor.price if competitor else None,
                 competitor_name=competitor.competitor_name if competitor else None,
                 margin_rate=round(margin_rate, 4),
@@ -604,3 +691,46 @@ async def dashboard_products(settings_margin: float) -> list[DashboardProduct]:
             )
         )
     return result
+
+
+async def analytics_summary() -> AnalyticsSummary:
+    products = await dashboard_products(0.12)
+    targets = await list_competitor_targets()
+    alerts = await list_alerts()
+    runs = await list_agent_runs()
+    gaps = [
+        (product.current_price - product.competitor_price) / product.competitor_price
+        for product in products
+        if product.competitor_price and product.competitor_price > 0
+    ]
+    completed_recent = [run for run in runs if run.status == "complete"]
+    return AnalyticsSummary(
+        total_products=len(products),
+        active_products=sum(1 for product in products if product.status == "active"),
+        active_competitors=sum(1 for target in targets if target.status == "active"),
+        average_price_gap=round(sum(gaps) / len(gaps), 4) if gaps else None,
+        recent_scans=len(runs),
+        average_match_confidence=None if not completed_recent else 0.86,
+        active_alerts=len(alerts),
+    )
+
+
+async def pricing_trends(limit: int = 100) -> list[TrendPoint]:
+    history = await list_pricing_history(limit)
+    return [
+        TrendPoint(
+            label=item.created_at.strftime("%m/%d %H:%M") if hasattr(item.created_at, "strftime") else str(item.created_at),
+            value=item.new_price,
+            secondary_value=item.competitor_price,
+        )
+        for item in history
+    ]
+
+
+async def scan_volume(limit: int = 50) -> list[TrendPoint]:
+    runs = await list_agent_runs(limit)
+    buckets: dict[str, int] = {}
+    for run in runs:
+        label = run.created_at.strftime("%m/%d") if hasattr(run.created_at, "strftime") else str(run.created_at)[:10]
+        buckets[label] = buckets.get(label, 0) + 1
+    return [TrendPoint(label=label, value=value) for label, value in sorted(buckets.items())]

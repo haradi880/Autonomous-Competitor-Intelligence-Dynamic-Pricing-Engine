@@ -10,14 +10,19 @@ from fastapi.responses import StreamingResponse
 from models.schemas import (
     AgentRun,
     AlertItem,
+    AnalyticsSummary,
     AutopilotSettings,
+    Competitor,
+    CompetitorIn,
     CompetitorTarget,
     CompetitorTargetIn,
     CompetitorUrlInput,
     DashboardState,
     Product,
     ProductIn,
+    ProductUpdate,
     ScanResponse,
+    TrendPoint,
     WebhookPayload,
 )
 from services import supabase_store
@@ -80,6 +85,66 @@ async def create_product(payload: ProductIn) -> Product:
         return await app_state.add_product(payload)
 
 
+@router.patch("/products/{product_id}", response_model=Product)
+async def update_product(product_id: UUID, payload: ProductUpdate) -> Product:
+    try:
+        product = await supabase_store.update_product(product_id, payload)
+        await app_state.append_log(f"[Catalog] Updated tracked product {product.title}.")
+        return product
+    except Exception as exc:
+        logger.exception("Product update failed")
+        raise HTTPException(status_code=502, detail=str(exc)) from exc
+
+
+@router.delete("/products/{product_id}", response_model=dict[str, str])
+async def delete_product(product_id: UUID) -> dict[str, str]:
+    try:
+        await supabase_store.delete_product(product_id)
+        await app_state.append_log(f"[Catalog] Deleted tracked product {product_id}.")
+        return {"status": "deleted"}
+    except Exception as exc:
+        logger.exception("Product delete failed")
+        raise HTTPException(status_code=502, detail=str(exc)) from exc
+
+
+@router.get("/competitors", response_model=list[Competitor])
+async def competitors() -> list[Competitor]:
+    return await supabase_store.list_competitors()
+
+
+@router.post("/competitors", response_model=Competitor, status_code=201)
+async def create_competitor(payload: CompetitorIn) -> Competitor:
+    try:
+        competitor = await supabase_store.create_competitor(payload)
+        await app_state.append_log(f"[Competitors] Added {competitor.name}.")
+        return competitor
+    except Exception as exc:
+        logger.exception("Competitor create failed")
+        raise HTTPException(status_code=502, detail=str(exc)) from exc
+
+
+@router.patch("/competitors/{competitor_id}", response_model=Competitor)
+async def update_competitor(competitor_id: UUID, payload: CompetitorIn) -> Competitor:
+    try:
+        competitor = await supabase_store.update_competitor(competitor_id, payload)
+        await app_state.append_log(f"[Competitors] Updated {competitor.name}.")
+        return competitor
+    except Exception as exc:
+        logger.exception("Competitor update failed")
+        raise HTTPException(status_code=502, detail=str(exc)) from exc
+
+
+@router.delete("/competitors/{competitor_id}", response_model=dict[str, str])
+async def delete_competitor(competitor_id: UUID) -> dict[str, str]:
+    try:
+        await supabase_store.delete_competitor(competitor_id)
+        await app_state.append_log(f"[Competitors] Deleted {competitor_id}.")
+        return {"status": "deleted"}
+    except Exception as exc:
+        logger.exception("Competitor delete failed")
+        raise HTTPException(status_code=502, detail=str(exc)) from exc
+
+
 @router.get("/competitor-targets", response_model=list[CompetitorTarget])
 async def competitor_targets() -> list[CompetitorTarget]:
     return await supabase_store.list_competitor_targets()
@@ -99,6 +164,21 @@ async def create_competitor_target(payload: CompetitorTargetIn) -> CompetitorTar
 @router.get("/scans", response_model=list[AgentRun])
 async def scans() -> list[AgentRun]:
     return await supabase_store.list_agent_runs()
+
+
+@router.get("/analytics/summary", response_model=AnalyticsSummary)
+async def analytics_summary() -> AnalyticsSummary:
+    return await supabase_store.analytics_summary()
+
+
+@router.get("/analytics/pricing-trends", response_model=list[TrendPoint])
+async def analytics_pricing_trends() -> list[TrendPoint]:
+    return await supabase_store.pricing_trends()
+
+
+@router.get("/analytics/scan-volume", response_model=list[TrendPoint])
+async def analytics_scan_volume() -> list[TrendPoint]:
+    return await supabase_store.scan_volume()
 
 
 @router.get("/scans/{run_id}", response_model=AgentRun)

@@ -2,6 +2,7 @@ import asyncio
 import hashlib
 import logging
 import os
+import random
 from uuid import UUID
 from urllib.parse import urlparse, urlunparse
 
@@ -78,11 +79,18 @@ async def dispatch_storefront_webhook(decision: PricingDecision) -> bool:
         webhook_url = urlunparse(parsed._replace(netloc=f"127.0.0.1:{render_port}"))
 
     async with httpx.AsyncClient(timeout=settings.request_timeout_seconds) as client:
-        response = await client.post(
-            webhook_url,
-            json={"product_id": str(decision.product_id), "new_price": decision.target_price, "source": "autopilot"},
-        )
-        response.raise_for_status()
+        for attempt in range(3):
+            try:
+                response = await client.post(
+                    webhook_url,
+                    json={"product_id": str(decision.product_id), "new_price": decision.target_price, "source": "autopilot"},
+                )
+                response.raise_for_status()
+                break
+            except (httpx.HTTPStatusError, httpx.TimeoutException, httpx.TransportError):
+                if attempt == 2:
+                    raise
+                await asyncio.sleep((1.2 * (attempt + 1)) + random.random())
     return True
 
 

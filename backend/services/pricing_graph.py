@@ -33,6 +33,11 @@ class PricingGraphState(TypedDict, total=False):
     match_distance: float
     match_confidence: float
     price_to_spec_ratio: float
+    spec_score: float
+    volatility_score: float
+    trend_signal: str
+    stock_signal: str
+    confidence_score: float
     decision: PricingDecision
 
 
@@ -112,13 +117,34 @@ async def analyst_agent(state: PricingGraphState) -> PricingGraphState:
 
     spec_count = max(1, len(extraction.specifications) or len(extraction.specs_summary.split(",")) or 1)
     state["price_to_spec_ratio"] = round(extraction.price / spec_count, 4)
+    state["spec_score"] = round(min(1.0, spec_count / 8), 4)
+    state["stock_signal"] = "available" if extraction.availability.lower() in {"in stock", "available"} or "stock" in extraction.availability.lower() else "constrained"
+    history = await supabase_store.list_pricing_history(25)
+    competitor_points = [item.competitor_price for item in history if item.product_id == payload.product_id and item.competitor_price > 0]
+    if len(competitor_points) >= 2:
+        previous = competitor_points[-2]
+        latest = competitor_points[-1]
+        delta = (latest - previous) / previous if previous else 0
+        state["trend_signal"] = "dropping" if delta < -0.03 else "rising" if delta > 0.03 else "stable"
+        spread = max(competitor_points) - min(competitor_points)
+        state["volatility_score"] = round(min(1.0, spread / max(competitor_points)), 4)
+    else:
+        state["trend_signal"] = "insufficient_history"
+        state["volatility_score"] = 0.0
+    state["confidence_score"] = round(
+        ((state.get("match_confidence") or 0) * 0.7) + (state["spec_score"] * 0.3),
+        4,
+    )
     await supabase_store.persist_competitor_observation(
         payload.product_id,
         payload.competitor_name,
         extraction,
         state["embedding"],
     )
-    _log(state, f"[AnalystAgent] Stored competitor observation at {extraction.currency} {extraction.price:.2f}.")
+    _log(
+        state,
+        f"[AnalystAgent] Stored observation; confidence {state['confidence_score']:.2f}, trend {state['trend_signal']}, volatility {state['volatility_score']:.2f}.",
+    )
     return state
 
 
@@ -133,6 +159,20 @@ async def decision_maker_agent(state: PricingGraphState) -> PricingGraphState:
     clamped = target_price == margin_floor and undercut_target < margin_floor
     margin_rate = round((target_price - product.base_cost) / target_price, 4)
     changed = abs(product.current_price - target_price) >= 0.01
+    reasoning = [
+        f"Competitor price observed at {extraction.currency} {extraction.price:.2f}.",
+        f"5% undercut target is ${undercut_target:.2f}.",
+        f"Margin floor is ${margin_floor:.2f}.",
+        f"Semantic confidence is {(state.get('match_confidence') or 0):.2f}.",
+        f"Stock signal is {state.get('stock_signal', 'unknown')}.",
+        f"Trend signal is {state.get('trend_signal', 'insufficient_history')}.",
+    ]
+    if clamped:
+        reasoning.append("Target was clamped to protect the configured margin floor.")
+    elif not changed:
+        reasoning.append("Current price already matches the recommended target.")
+    else:
+        reasoning.append("Recommendation is eligible for autopilot dispatch when enabled.")
     decision = PricingDecision(
         product_id=payload.product_id,
         old_price=product.current_price,
@@ -146,6 +186,12 @@ async def decision_maker_agent(state: PricingGraphState) -> PricingGraphState:
         match_distance=state.get("match_distance"),
         match_confidence=state.get("match_confidence"),
         price_to_spec_ratio=state.get("price_to_spec_ratio"),
+        stock_signal=state.get("stock_signal"),
+        trend_signal=state.get("trend_signal"),
+        volatility_score=state.get("volatility_score"),
+        spec_score=state.get("spec_score"),
+        confidence_score=state.get("confidence_score"),
+        reasoning=reasoning,
     )
     state["decision"] = decision
 
