@@ -68,9 +68,9 @@ export function ScanPanel({ products, onComplete }: Props) {
         description="Run a one-off market check against any competitor product page."
         action={<StatusBadge tone="info">Real Jina + Gemini</StatusBadge>}
       />
-      <form onSubmit={submit} className="grid gap-3 p-4 md:grid-cols-[1fr_1fr]">
-        <label className="grid gap-1 text-sm">
-          <span className="font-semibold text-ink/70">Tracked product</span>
+      <form onSubmit={submit} className="grid gap-4 p-4 md:grid-cols-2 xl:grid-cols-[minmax(220px,0.85fr)_minmax(220px,0.75fr)_minmax(0,1.4fr)_140px] xl:items-end">
+        <label className="field-label">
+          <span className="field-label-text">Tracked product</span>
           <select
             value={selectedProduct?.id ?? ""}
             onChange={(event) => setProductId(event.currentTarget.value)}
@@ -83,8 +83,8 @@ export function ScanPanel({ products, onComplete }: Props) {
             ))}
           </select>
         </label>
-        <label className="grid gap-1 text-sm">
-          <span className="font-semibold text-ink/70">Competitor name</span>
+        <label className="field-label">
+          <span className="field-label-text">Competitor name</span>
           <input
             value={competitorName}
             onChange={(event) => setCompetitorName(event.currentTarget.value)}
@@ -92,10 +92,10 @@ export function ScanPanel({ products, onComplete }: Props) {
             placeholder="Amazon, Best Buy, Shopify test store"
           />
         </label>
-        <label className="grid gap-1 text-sm md:col-span-2">
-          <span className="font-semibold text-ink/70">Competitor product URL</span>
-          <div className="flex">
-            <span className="grid h-10 w-10 place-items-center border border-r-0 border-ink/15 bg-mist">
+        <label className="field-label min-w-0 md:col-span-2 xl:col-span-1">
+          <span className="field-label-text">Competitor product URL</span>
+          <div className="url-control">
+            <span className="url-control-icon">
               <Link2 size={16} />
             </span>
             <input
@@ -103,7 +103,7 @@ export function ScanPanel({ products, onComplete }: Props) {
               type="url"
               value={url}
               onChange={(event) => setUrl(event.currentTarget.value)}
-              className="control-input min-w-0 flex-1 rounded-l-none"
+              className="url-control-input"
               placeholder="https://example-store.com/products/item"
             />
           </div>
@@ -111,7 +111,7 @@ export function ScanPanel({ products, onComplete }: Props) {
         <button
           type="submit"
           disabled={busy || products.length === 0}
-          className="button-primary w-full md:w-fit"
+          className="button-primary h-12 w-full"
         >
           {busy ? <Search size={17} className="animate-pulse" /> : <Play size={17} />}
           {busy ? "Scanning..." : "Run Scan"}

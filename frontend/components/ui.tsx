@@ -42,7 +42,7 @@ export function SectionHeader({
           {description ? <p className="mt-1 text-xs leading-5 text-ink/55">{description}</p> : null}
         </div>
       </div>
-      {action}
+      {action ? <div className="w-full sm:w-auto sm:shrink-0">{action}</div> : null}
     </div>
   );
 }

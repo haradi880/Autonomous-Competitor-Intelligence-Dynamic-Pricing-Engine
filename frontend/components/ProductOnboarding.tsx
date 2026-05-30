@@ -56,73 +56,97 @@ export function ProductOnboarding({ onComplete }: Props) {
   return (
     <GlassPanel>
       <SectionHeader icon={<PackagePlus size={18} />} title="Track Your Own Product" description="Create a pricing record with enough metadata for real operating teams." />
-      <form onSubmit={submit} className="grid gap-3 p-4 md:grid-cols-2 xl:grid-cols-[1.2fr_0.8fr_0.8fr_0.8fr]">
-        <input
-          required
-          value={title}
-          onChange={(event) => setTitle(event.currentTarget.value)}
-          placeholder="Product title"
-          className="control-input"
-        />
-        <input
-          value={sku}
-          onChange={(event) => setSku(event.currentTarget.value)}
-          placeholder="SKU"
-          className="control-input"
-        />
-        <input
-          value={brand}
-          onChange={(event) => setBrand(event.currentTarget.value)}
-          placeholder="Brand"
-          className="control-input"
-        />
-        <input
-          value={category}
-          onChange={(event) => setCategory(event.currentTarget.value)}
-          placeholder="Category"
-          className="control-input"
-        />
-        <input
-          required
-          min="0.01"
-          step="0.01"
-          type="number"
-          value={baseCost}
-          onChange={(event) => setBaseCost(event.currentTarget.value)}
-          placeholder="Base cost"
-          className="control-input"
-        />
-        <input
-          required
-          min="0.01"
-          step="0.01"
-          type="number"
-          value={currentPrice}
-          onChange={(event) => setCurrentPrice(event.currentTarget.value)}
-          placeholder="Current price"
-          className="control-input"
-        />
-        <input
-          required
-          min="1"
-          max="80"
-          step="1"
-          type="number"
-          value={targetMargin}
-          onChange={(event) => setTargetMargin(event.currentTarget.value)}
-          placeholder="Target margin %"
-          className="control-input"
-        />
-        <input
-          value={description}
-          onChange={(event) => setDescription(event.currentTarget.value)}
-          placeholder="Product description"
-          className="control-input xl:col-span-2"
-        />
+      <form onSubmit={submit} className="grid gap-4 p-4 md:grid-cols-2 xl:grid-cols-4">
+        <label className="field-label md:col-span-2">
+          <span className="field-label-text">Product title</span>
+          <input
+            required
+            value={title}
+            onChange={(event) => setTitle(event.currentTarget.value)}
+            placeholder="AeroBook Pro 14"
+            className="control-input"
+          />
+        </label>
+        <label className="field-label">
+          <span className="field-label-text">SKU</span>
+          <input
+            value={sku}
+            onChange={(event) => setSku(event.currentTarget.value)}
+            placeholder="AB-PRO-14"
+            className="control-input"
+          />
+        </label>
+        <label className="field-label">
+          <span className="field-label-text">Brand</span>
+          <input
+            value={brand}
+            onChange={(event) => setBrand(event.currentTarget.value)}
+            placeholder="Acme"
+            className="control-input"
+          />
+        </label>
+        <label className="field-label">
+          <span className="field-label-text">Category</span>
+          <input
+            value={category}
+            onChange={(event) => setCategory(event.currentTarget.value)}
+            placeholder="Laptops"
+            className="control-input"
+          />
+        </label>
+        <label className="field-label">
+          <span className="field-label-text">Base cost</span>
+          <input
+            required
+            min="0.01"
+            step="0.01"
+            type="number"
+            value={baseCost}
+            onChange={(event) => setBaseCost(event.currentTarget.value)}
+            placeholder="100.00"
+            className="control-input"
+          />
+        </label>
+        <label className="field-label">
+          <span className="field-label-text">Current price</span>
+          <input
+            required
+            min="0.01"
+            step="0.01"
+            type="number"
+            value={currentPrice}
+            onChange={(event) => setCurrentPrice(event.currentTarget.value)}
+            placeholder="149.00"
+            className="control-input"
+          />
+        </label>
+        <label className="field-label">
+          <span className="field-label-text">Target margin %</span>
+          <input
+            required
+            min="1"
+            max="80"
+            step="1"
+            type="number"
+            value={targetMargin}
+            onChange={(event) => setTargetMargin(event.currentTarget.value)}
+            placeholder="12"
+            className="control-input"
+          />
+        </label>
+        <label className="field-label md:col-span-2 xl:col-span-3">
+          <span className="field-label-text">Product description</span>
+          <textarea
+            value={description}
+            onChange={(event) => setDescription(event.currentTarget.value)}
+            placeholder="Key specifications, bundle notes, or merchandising context"
+            className="min-h-24 w-full rounded-xl border border-ink/10 bg-white/85 px-3.5 py-3 text-sm text-ink shadow-sm transition placeholder:text-ink/35 focus:border-fern focus:ring-2 focus:ring-fern/15"
+          />
+        </label>
         <button
           type="submit"
           disabled={busy}
-          className="button-primary"
+          className="button-primary h-12 w-full self-end xl:w-auto"
         >
           {busy ? "Adding..." : "Add Product"}
         </button>

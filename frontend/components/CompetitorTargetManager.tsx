@@ -132,91 +132,113 @@ export function CompetitorTargetManager({ products, onScanComplete }: Props) {
   return (
     <GlassPanel>
       <SectionHeader icon={<Crosshair size={18} />} title="Competitor Targets" description="Persist URLs once, then run analysis whenever the market moves." />
-      <div className="grid gap-3 border-b border-ink/10 p-4 lg:grid-cols-[1fr_1fr_1fr_auto]">
-        <select
-          value={competitorId}
-          onChange={(event) => {
-            const id = event.currentTarget.value;
-            setCompetitorId(id);
-            const selected = competitors.find((competitor) => competitor.id === id);
-            if (selected) {
-              setCompetitorName(selected.name);
-              setCompetitorWebsite(selected.website ?? "");
-              setCompetitorCategory(selected.category ?? "");
-            }
-          }}
-          className="control-input"
-          aria-label="Saved competitor"
-        >
-          <option value="">New competitor</option>
-          {competitors.map((competitor) => (
-            <option key={competitor.id} value={competitor.id}>
-              {competitor.name}
-            </option>
-          ))}
-        </select>
-        <input
-          required
-          value={competitorName}
-          onChange={(event) => setCompetitorName(event.currentTarget.value)}
-          placeholder="Competitor name"
-          className="control-input"
-        />
-        <input
-          type="url"
-          value={competitorWebsite}
-          onChange={(event) => setCompetitorWebsite(event.currentTarget.value)}
-          placeholder="https://competitor.com"
-          className="control-input"
-        />
-        <div className="flex gap-2">
-          <input
-            value={competitorCategory}
-            onChange={(event) => setCompetitorCategory(event.currentTarget.value)}
-            placeholder="Group"
-            className="control-input min-w-0 flex-1"
-          />
+      <div className="border-b border-ink/10 p-4">
+        <div className="mb-3">
+          <p className="text-sm font-semibold text-ink">Competitor Directory</p>
+          <p className="mt-1 text-xs leading-5 text-ink/55">Create reusable competitor profiles before attaching product URLs.</p>
+        </div>
+        <div className="grid gap-4 lg:grid-cols-2 2xl:grid-cols-[1fr_1fr_1fr_1fr_auto]">
+          <label className="field-label">
+            <span className="field-label-text">Saved competitor</span>
+            <select
+              value={competitorId}
+              onChange={(event) => {
+                const id = event.currentTarget.value;
+                setCompetitorId(id);
+                const selected = competitors.find((competitor) => competitor.id === id);
+                if (selected) {
+                  setCompetitorName(selected.name);
+                  setCompetitorWebsite(selected.website ?? "");
+                  setCompetitorCategory(selected.category ?? "");
+                }
+              }}
+              className="control-input"
+              aria-label="Saved competitor"
+            >
+              <option value="">New competitor</option>
+              {competitors.map((competitor) => (
+                <option key={competitor.id} value={competitor.id}>
+                  {competitor.name}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className="field-label">
+            <span className="field-label-text">Competitor name</span>
+            <input
+              required
+              value={competitorName}
+              onChange={(event) => setCompetitorName(event.currentTarget.value)}
+              placeholder="Market leader"
+              className="control-input"
+            />
+          </label>
+          <label className="field-label">
+            <span className="field-label-text">Website</span>
+            <input
+              type="url"
+              value={competitorWebsite}
+              onChange={(event) => setCompetitorWebsite(event.currentTarget.value)}
+              placeholder="https://competitor.com"
+              className="control-input"
+            />
+          </label>
+          <label className="field-label">
+            <span className="field-label-text">Group</span>
+            <input
+              value={competitorCategory}
+              onChange={(event) => setCompetitorCategory(event.currentTarget.value)}
+              placeholder="Marketplace"
+              className="control-input"
+            />
+          </label>
           <button
             type="button"
             onClick={() => void saveCompetitor()}
             disabled={saving}
-            className="button-primary"
+            className="button-primary h-12 w-full self-end 2xl:w-auto"
           >
             Save
           </button>
         </div>
       </div>
-      <form onSubmit={submit} className="grid gap-3 p-4 lg:grid-cols-[1fr_1.4fr_auto]">
-        <select
-          value={selectedProductId}
-          onChange={(event) => setProductId(event.currentTarget.value)}
-          className="control-input"
-          aria-label="Tracked product"
-          required
-        >
-          {products.map((product) => (
-            <option key={product.id} value={product.id}>
-              {product.title}
-            </option>
-          ))}
-        </select>
-        <div className="flex">
-          <span className="grid h-10 w-10 place-items-center border border-r-0 border-ink/15 bg-mist">
-            <Link2 size={16} />
-          </span>
-          <input
+      <form onSubmit={submit} className="grid gap-4 p-4 lg:grid-cols-[minmax(220px,0.8fr)_minmax(0,1.5fr)_160px] lg:items-end">
+        <label className="field-label">
+          <span className="field-label-text">Tracked product</span>
+          <select
+            value={selectedProductId}
+            onChange={(event) => setProductId(event.currentTarget.value)}
+            className="control-input"
+            aria-label="Tracked product"
             required
-            type="url"
-            value={competitorUrl}
-            onChange={(event) => setCompetitorUrl(event.currentTarget.value)}
-            placeholder="https://competitor.com/product"
-            className="h-10 min-w-0 flex-1 rounded-r-md border border-ink/15 px-3 text-sm"
-          />
-        </div>
+          >
+            {products.map((product) => (
+              <option key={product.id} value={product.id}>
+                {product.title}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label className="field-label min-w-0">
+          <span className="field-label-text">Competitor product URL</span>
+          <div className="url-control">
+            <span className="url-control-icon">
+              <Link2 size={16} />
+            </span>
+            <input
+              required
+              type="url"
+              value={competitorUrl}
+              onChange={(event) => setCompetitorUrl(event.currentTarget.value)}
+              placeholder="https://competitor.com/product"
+              className="url-control-input"
+            />
+          </div>
+        </label>
         <button
           type="submit"
           disabled={saving || products.length === 0}
-          className="button-primary"
+          className="button-primary h-12 w-full"
         >
           <Plus size={17} />
           {saving ? "Saving..." : "Add Target"}
@@ -258,7 +280,7 @@ export function CompetitorTargetManager({ products, onScanComplete }: Props) {
           </div>
         ) : (
           targets.map((target) => (
-            <div key={target.id} className="grid gap-3 px-4 py-3 text-sm lg:grid-cols-[1fr_1.4fr_auto] lg:items-center">
+            <div key={target.id} className="grid gap-3 px-4 py-3 text-sm lg:grid-cols-[minmax(180px,0.8fr)_minmax(0,1.5fr)_140px] lg:items-center">
               <div>
                 <p className="font-semibold">{target.competitor_name}</p>
                 <div className="mt-1"><StatusBadge tone={target.status === "active" ? "success" : "neutral"}>{target.status}</StatusBadge></div>
@@ -268,14 +290,14 @@ export function CompetitorTargetManager({ products, onScanComplete }: Props) {
                     : "Not checked yet"}
                 </p>
               </div>
-              <a href={target.competitor_url} target="_blank" rel="noreferrer" className="truncate text-ink/65 underline">
+              <a href={target.competitor_url} target="_blank" rel="noreferrer" className="break-all rounded-lg bg-white/55 px-3 py-2 text-ink/65 underline lg:truncate lg:bg-transparent lg:px-0 lg:py-0">
                 {target.competitor_url}
               </a>
               <button
                 type="button"
                 onClick={() => void runTarget(target)}
                 disabled={busyTargetId !== null}
-                className="button-secondary h-9"
+                className="button-secondary h-10 w-full"
               >
                 {busyTargetId === target.id ? <Pause size={16} /> : <Play size={16} />}
                 {busyTargetId === target.id ? "Scanning..." : "Run Scan"}

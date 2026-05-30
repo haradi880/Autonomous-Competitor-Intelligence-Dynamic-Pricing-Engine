@@ -79,8 +79,8 @@ export function CommandCenter({ view }: Props) {
                     }`}
               </p>
             </div>
-            <div className="flex min-w-0 gap-2">
-              <label className="flex h-11 min-w-0 flex-1 rounded-xl border border-ink/10 bg-white/85 shadow-sm md:w-80">
+            <div className="flex w-full min-w-0 gap-2 md:w-auto">
+              <label className="flex h-12 min-w-0 flex-1 rounded-xl border border-ink/10 bg-white/85 shadow-sm md:w-[22rem]">
                 <span className="grid w-10 place-items-center text-ink/45">
                   <Search size={17} />
                 </span>
@@ -95,7 +95,7 @@ export function CommandCenter({ view }: Props) {
                 type="button"
                 title="Refresh dashboard"
                 onClick={() => void refresh()}
-                className="grid h-11 w-11 shrink-0 place-items-center rounded-xl border border-ink/10 bg-white/85 text-ink shadow-sm transition hover:bg-white"
+                className="grid h-12 w-12 shrink-0 place-items-center rounded-xl border border-ink/10 bg-white/85 text-ink shadow-sm transition hover:bg-white"
               >
                 <RefreshCcw size={18} />
               </button>
