@@ -1,6 +1,6 @@
 # Autonomous Competitor Intelligence & Dynamic Pricing Engine
 
-Production-ready Project A submission: FastAPI, LangGraph, Gemini, Jina Reader, Supabase pgvector, and a multi-page Next.js operator dashboard.
+Production-ready Project A submission: FastAPI, LangGraph, Gemini, Jina Reader, Supabase pgvector, and a polished multi-page SaaS operator dashboard.
 
 ## Hosted Application
 
@@ -10,17 +10,17 @@ Production-ready Project A submission: FastAPI, LangGraph, Gemini, Jina Reader, 
 
 ## Product Workflow
 
-1. Add or select a tracked product with base cost and current price.
-2. Add a competitor target URL for that product.
-3. Run a scan.
+1. Create or manage tracked products with SKU, brand, category, cost, current price, target margin, and lifecycle status.
+2. Create competitors and attach competitor product URL targets to tracked products.
+3. Run a scan from a saved target or one-off URL.
 4. LangGraph executes named agents: Ingestion, Classifier, Analyst, Decision Maker, Webhook.
 5. Supabase pgvector verifies semantic product match.
-6. The pricing engine recommends a 5% undercut while enforcing the configured margin floor.
+6. The pricing engine recommends a 5% undercut while enriching the decision with confidence, trend, volatility, stock, and margin reasoning.
 7. If autopilot is enabled, the storefront webhook receives the update.
 
 ## Architecture
 
-- Frontend: Next.js App Router, TypeScript, Tailwind CSS, Lucide Icons, Recharts.
+- Frontend: Next.js App Router, TypeScript, Tailwind CSS, Lucide Icons, Recharts, Framer Motion.
 - Backend: Python 3.11, FastAPI, Uvicorn, strict Pydantic v2 schemas.
 - Agent orchestration: LangGraph named-agent pipeline.
 - Database: Supabase PostgreSQL with pgvector.
@@ -33,6 +33,7 @@ Run `database/schema.sql` in Supabase SQL Editor. It creates:
 
 - `tracked_products`
 - `competitor_products`
+- `competitors`
 - `competitor_targets`
 - `agent_runs`
 - `agent_run_events`
@@ -95,8 +96,15 @@ Smoke endpoints:
 - `GET /api/v1/health`
 - `GET /api/v1/dashboard`
 - `GET /api/v1/alerts`
+- `GET /api/v1/competitors`
+- `POST /api/v1/competitors`
+- `PATCH /api/v1/products/{product_id}`
+- `DELETE /api/v1/products/{product_id}`
 - `GET /api/v1/competitor-targets`
 - `GET /api/v1/scans`
+- `GET /api/v1/analytics/summary`
+- `GET /api/v1/analytics/pricing-trends`
+- `GET /api/v1/analytics/scan-volume`
 - `POST /api/v1/scan`
 
 ## Assignment Alignment
@@ -104,7 +112,8 @@ Smoke endpoints:
 - Supabase: spec tables, pgvector index, compatibility views, persistent alerts, target URLs, and scan-run history.
 - LangGraph: named agents for ingestion, classification, vector analysis, decisioning, and webhook dispatch.
 - FastAPI: REST endpoints for dashboard state, settings, scans, alerts, products, targets, logs, and mock storefront webhook.
-- Dashboard: multi-page command center with products, competitors, scans, alerts, readiness, autopilot controls, catalog intelligence, and pricing trajectories.
+- Dashboard: premium multi-page SaaS command center with sidebar navigation, KPI cards, products, competitors, scans, alerts, readiness, autopilot controls, catalog intelligence, and pricing trajectories.
+- Pricing intelligence: deterministic 5% undercut and margin-floor guardrails enriched with confidence, spec score, trend, volatility, stock signal, and structured reasoning.
 - Deployment: Docker-ready backend and Vercel-ready frontend with env-only secrets.
 
 ## Five-Minute Loom Script

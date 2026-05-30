@@ -6,7 +6,7 @@ Autonomous Competitor Intelligence & Dynamic Pricing Engine
 
 ## One-Line Summary
 
-This project is a production-oriented MVP for Project A: an autonomous pricing command center that ingests competitor product URLs, extracts structured pricing data with AI, verifies semantic product matches using Supabase pgvector, applies deterministic pricing rules, and optionally dispatches storefront price updates through a webhook.
+This project is a production-oriented SaaS MVP for Project A: an autonomous pricing command center that manages products and competitors, ingests competitor product URLs, extracts structured pricing data with AI, verifies semantic product matches using Supabase pgvector, applies deterministic pricing rules with explainable intelligence signals, and optionally dispatches storefront price updates through a webhook.
 
 ## Live Deployment
 
@@ -46,6 +46,10 @@ The implemented system includes:
 - Vector similarity RPC through `match_products`.
 - LangGraph stateful named-agent pipeline.
 - Deterministic pricing formula.
+- Product lifecycle management.
+- Competitor management.
+- KPI analytics.
+- Premium SaaS dashboard shell with Framer Motion interactions.
 - Autopilot toggle.
 - Minimum margin threshold slider.
 - Persistent alerts.
@@ -64,6 +68,7 @@ The implemented system includes:
 - Tailwind CSS
 - Lucide Icons
 - Recharts
+- Framer Motion
 - Vercel deployment
 
 ### Backend
@@ -177,12 +182,21 @@ Important endpoints:
 - `GET /api/v1/alerts`
 - `POST /api/v1/settings`
 - `POST /api/v1/products`
+- `PATCH /api/v1/products/{product_id}`
+- `DELETE /api/v1/products/{product_id}`
+- `GET /api/v1/competitors`
+- `POST /api/v1/competitors`
+- `PATCH /api/v1/competitors/{competitor_id}`
+- `DELETE /api/v1/competitors/{competitor_id}`
 - `POST /api/v1/scan`
 - `GET /api/v1/competitor-targets`
 - `POST /api/v1/competitor-targets`
 - `POST /api/v1/competitor-targets/{target_id}/scan`
 - `GET /api/v1/scans`
 - `GET /api/v1/scans/{run_id}`
+- `GET /api/v1/analytics/summary`
+- `GET /api/v1/analytics/pricing-trends`
+- `GET /api/v1/analytics/scan-volume`
 - `GET /api/v1/logs/stream`
 - `POST /api/v1/mock-storefront-webhook`
 
@@ -196,6 +210,7 @@ It creates the production tables:
 
 - `tracked_products`
 - `competitor_products`
+- `competitors`
 - `competitor_targets`
 - `agent_runs`
 - `agent_run_events`
@@ -235,6 +250,17 @@ Example:
 
 In this case, the price is clamped because selling at `$95` would violate the margin rule.
 
+The decision also includes structured analyst reasoning:
+
+- semantic match confidence
+- spec score
+- overall confidence score
+- stock signal
+- historical trend signal
+- volatility score
+- price-to-spec ratio
+- margin floor explanation
+
 ## Frontend Pages
 
 The frontend is now a multi-page production operator console.
@@ -257,6 +283,9 @@ Command Center overview:
 Product management:
 
 - Add tracked products
+- Capture SKU, brand, category, description, and target margin
+- Archive or restore products
+- Delete products
 - View catalog intelligence
 - Review pricing trajectory
 
@@ -264,6 +293,8 @@ Product management:
 
 Competitor monitoring:
 
+- Create competitor records
+- Group competitors by category
 - Add competitor product URLs
 - Persist competitor targets
 - Run scans against saved targets
@@ -365,6 +396,7 @@ This is not just a static dashboard. It is an end-to-end system:
 - The deterministic pricing engine makes the pricing decision.
 - The webhook simulates storefront integration.
 - The entire app is deployed with a real frontend and backend URL.
+- The SaaS interface includes responsive sidebar navigation, KPI cards, polished cards, animations, lifecycle actions, and durable operational state.
 
 ## Suggested GPT Prompt To Explain The Project
 
