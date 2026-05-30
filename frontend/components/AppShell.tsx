@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Activity, AlertTriangle, Boxes, Circle, Crosshair, FileCheck2, Gauge } from "lucide-react";
+import { Activity, AlertTriangle, BookOpen, Boxes, Circle, Crosshair, FileCheck2, Gauge } from "lucide-react";
 
 const navItems = [
   { href: "/", label: "Command", short: "Home", icon: <Gauge size={18} /> },
@@ -10,7 +10,8 @@ const navItems = [
   { href: "/competitors", label: "Competitors", short: "Targets", icon: <Crosshair size={18} /> },
   { href: "/scans", label: "Scans", short: "Scans", icon: <Activity size={18} /> },
   { href: "/alerts", label: "Alerts", short: "Alerts", icon: <AlertTriangle size={18} /> },
-  { href: "/readiness", label: "Readiness", short: "Ready", icon: <FileCheck2 size={18} /> }
+  { href: "/readiness", label: "Readiness", short: "Ready", icon: <FileCheck2 size={18} /> },
+  { href: "/about", label: "Documentation", short: "Docs", icon: <BookOpen size={18} /> }
 ];
 
 export function AppShell({ children }: Readonly<{ children: React.ReactNode }>) {
@@ -63,7 +64,7 @@ export function AppShell({ children }: Readonly<{ children: React.ReactNode }>) 
       <main className="lg:pl-72">{children}</main>
 
       <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-white/70 bg-white/90 px-2 py-2 shadow-[0_-12px_40px_rgba(23,33,38,0.12)] backdrop-blur-xl lg:hidden" aria-label="Mobile navigation">
-        <div className="grid grid-cols-6 gap-1">
+        <div className="flex gap-1 overflow-x-auto">
           {navItems.map((item) => {
             const active = pathname === item.href;
             return (
@@ -71,7 +72,7 @@ export function AppShell({ children }: Readonly<{ children: React.ReactNode }>) 
                 key={item.href}
                 href={item.href}
                 aria-current={active ? "page" : undefined}
-                className={`grid min-w-0 place-items-center gap-1 rounded-xl px-1 py-2 text-[10px] font-semibold transition ${
+                className={`grid min-w-[4.25rem] place-items-center gap-1 rounded-xl px-2 py-2 text-[10px] font-semibold transition ${
                   active ? "bg-ink text-white" : "text-ink/55"
                 }`}
               >
