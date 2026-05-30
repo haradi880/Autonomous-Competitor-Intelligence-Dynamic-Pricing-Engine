@@ -12,7 +12,7 @@ Production-ready Project A submission: FastAPI, LangGraph, Gemini, Jina Reader, 
 
 The project also includes a NotebookLM-generated mind map for a quick reviewer overview of the workflow, architecture, agent pipeline, and deployment surface.
 
-![NotebookLM mind map for the autonomous competitor intelligence and dynamic pricing engine](assets/system-mind-map.png)
+![NotebookLM mind map for the autonomous competitor intelligence and dynamic pricing engine](assets/system-mind.png)
 
 ## Product Workflow
 
