@@ -341,6 +341,41 @@ The expected user path is:
 9. Check Alerts if something failed or was clamped.
 10. Check Scans for persistent execution records.
 
+## Example Data For Checking
+
+The project includes a Supabase seed script at `backend/scripts/seed_supabase.py`.
+
+It creates a ready-to-review operating dataset:
+
+- `AeroBook Pro 14 Laptop`
+- `PulseFit X2 Smartwatch`
+- `SonicPod ANC Earbuds`
+- Reference competitors
+- Competitor URL targets
+- Competitor observations with embeddings
+- Pricing history checkpoints for charts
+
+Run it after applying `database/schema.sql`:
+
+```powershell
+cd backend
+..\.venv\Scripts\python.exe scripts\seed_supabase.py
+```
+
+Sample scan payloads live in:
+
+`backend/scripts/sample_scan_payloads.json`
+
+Example:
+
+```json
+{
+  "product_id": "6468b79d-7a35-4d95-aec9-749ab4071239",
+  "competitor_name": "MarketWatch Reference",
+  "competitor_url": "https://fakestoreapi.com/products/1"
+}
+```
+
 ## Why This Feels Production-Ready
 
 The project avoids a toy/demo-only flow and supports real operator behavior:

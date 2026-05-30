@@ -1,0 +1,20 @@
+[
+  {
+    "label": "AeroBook Pro 14 market check",
+    "product_id": "4a50ce59-2854-4d5a-9fa4-02645f861bcc",
+    "competitor_name": "MarketWatch Reference",
+    "competitor_url": "https://fakestoreapi.com/products/14"
+  },
+  {
+    "label": "PulseFit X2 market check",
+    "product_id": "6468b79d-7a35-4d95-aec9-749ab4071239",
+    "competitor_name": "MarketWatch Reference",
+    "competitor_url": "https://fakestoreapi.com/products/1"
+  },
+  {
+    "label": "SonicPod ANC market check",
+    "product_id": "289df4c5-76a7-4d03-8a70-9d8549f19f55",
+    "competitor_name": "MarketWatch Reference",
+    "competitor_url": "https://fakestoreapi.com/products/2"
+  }
+]

@@ -43,6 +43,23 @@ Run `database/schema.sql` in Supabase SQL Editor. It creates:
 
 Backend writes require `SUPABASE_SERVICE_ROLE_KEY` or a Supabase server secret. Publishable keys are not enough for production writes.
 
+Seed reviewer-ready example data after running the schema:
+
+```powershell
+cd backend
+..\.venv\Scripts\python.exe scripts\seed_supabase.py
+```
+
+The seed script creates:
+
+- 3 tracked products with SKU, brand, category, target margin, and descriptions
+- 2 competitors
+- 3 competitor URL targets
+- 3 competitor observations with embeddings for `match_products`
+- 6 pricing history checkpoints for the chart
+
+Example scan payloads are also stored in `backend/scripts/sample_scan_payloads.json`.
+
 ## Environment
 
 Backend `backend/.env`:
@@ -106,6 +123,16 @@ Smoke endpoints:
 - `GET /api/v1/analytics/pricing-trends`
 - `GET /api/v1/analytics/scan-volume`
 - `POST /api/v1/scan`
+
+Example scan request:
+
+```json
+{
+  "product_id": "6468b79d-7a35-4d95-aec9-749ab4071239",
+  "competitor_name": "MarketWatch Reference",
+  "competitor_url": "https://fakestoreapi.com/products/1"
+}
+```
 
 ## Assignment Alignment
 
