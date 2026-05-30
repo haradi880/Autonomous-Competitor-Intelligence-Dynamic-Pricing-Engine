@@ -8,6 +8,12 @@ Production-ready Project A submission: FastAPI, LangGraph, Gemini, Jina Reader, 
 - Backend API docs: https://autonomous-competitor-intelligence.onrender.com/docs
 - Backend health: https://autonomous-competitor-intelligence.onrender.com/api/v1/health
 
+## System Mind Map
+
+The project also includes a NotebookLM-generated mind map for a quick reviewer overview of the workflow, architecture, agent pipeline, and deployment surface.
+
+![NotebookLM mind map for the autonomous competitor intelligence and dynamic pricing engine](assets/notebooklm-mind-map.png)
+
 ## Product Workflow
 
 1. Create or manage tracked products with SKU, brand, category, cost, current price, target margin, and lifecycle status.
