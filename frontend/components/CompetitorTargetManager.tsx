@@ -5,7 +5,7 @@ import { Crosshair, Link2, Pause, Play, Plus, Trash2 } from "lucide-react";
 import { createCompetitor, createCompetitorTarget, deleteCompetitor, fetchCompetitors, fetchCompetitorTargets, runCompetitorTargetScan, updateCompetitor } from "@/lib/api";
 import type { Competitor, CompetitorTarget, DashboardProduct, ScanResponse } from "@/lib/types";
 import { useToast } from "@/components/ToastProvider";
-import { EmptyState, ErrorPanel, GlassPanel, SectionHeader, StatusBadge } from "@/components/ui";
+import { EmptyState, ErrorPanel, GlassPanel, LoadingLabel, SectionHeader, StatusBadge } from "@/components/ui";
 
 type Props = {
   products: DashboardProduct[];
@@ -223,6 +223,14 @@ export function CompetitorTargetManager({ products, onScanComplete }: Props) {
         </button>
       </form>
       {error ? <div className="px-4 pb-4"><ErrorPanel message={error} onRetry={() => void refreshTargets()} /></div> : null}
+      {busyTargetId ? (
+        <div className="border-t border-violet/15 bg-violet/10 px-4 py-3">
+          <LoadingLabel label="Running saved target scan through the agent graph..." />
+          <p className="mt-1 text-xs leading-5 text-ink/55">
+            Ingestion, classification, vector verification, pricing decision, and webhook evaluation are being recorded.
+          </p>
+        </div>
+      ) : null}
       <div className="divide-y divide-ink/10 border-t border-ink/10">
         {competitors.length > 0 ? (
           <div className="grid gap-2 px-4 py-3 sm:grid-cols-2 xl:grid-cols-3">

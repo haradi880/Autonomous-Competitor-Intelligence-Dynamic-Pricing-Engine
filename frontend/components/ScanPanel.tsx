@@ -1,12 +1,12 @@
 "use client";
 
 import { FormEvent, useMemo, useState } from "react";
-import { Bot, Link2, Play, Search } from "lucide-react";
+import { Bot, CheckCircle2, Link2, Play, Search, Sparkles } from "lucide-react";
 import { AgentTimeline } from "@/components/AgentTimeline";
 import { runCompetitorScan } from "@/lib/api";
 import type { DashboardProduct, ScanResponse } from "@/lib/types";
 import { useToast } from "@/components/ToastProvider";
-import { ErrorPanel, GlassPanel, SectionHeader, StatusBadge } from "@/components/ui";
+import { ErrorPanel, GlassPanel, LoadingLabel, SectionHeader, StatusBadge } from "@/components/ui";
 
 type Props = {
   products: DashboardProduct[];
@@ -111,12 +111,32 @@ export function ScanPanel({ products, onComplete }: Props) {
         <button
           type="submit"
           disabled={busy || products.length === 0}
-          className="button-primary md:w-fit"
+          className="button-primary w-full md:w-fit"
         >
           {busy ? <Search size={17} className="animate-pulse" /> : <Play size={17} />}
           {busy ? "Scanning..." : "Run Scan"}
         </button>
       </form>
+      {busy ? (
+        <div className="border-t border-violet/15 bg-violet/10 px-4 py-4">
+          <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+            <div>
+              <LoadingLabel label="Autonomous pricing workflow in progress..." />
+              <p className="mt-1 text-xs leading-5 text-ink/55">
+                The scan may take longer on the hosted demo while Render wakes the API and third-party AI providers respond.
+              </p>
+            </div>
+            <div className="grid gap-2 text-xs font-semibold text-ink/60 sm:grid-cols-5 lg:min-w-[520px]">
+              {["Jina", "Gemini", "Vector RPC", "Pricing", "Webhook"].map((step, index) => (
+                <div key={step} className="flex items-center gap-2 rounded-full border border-white/70 bg-white/70 px-3 py-2">
+                  {index === 0 ? <Sparkles size={14} className="text-violet" /> : <CheckCircle2 size={14} className="text-ink/30" />}
+                  <span className="truncate">{step}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      ) : null}
       <AgentTimeline logs={timelineLogs} busy={busy} failed={Boolean(error)} />
       {error ? <div className="border-t border-ink/10 p-4"><ErrorPanel message={error} /></div> : null}
       {result ? (

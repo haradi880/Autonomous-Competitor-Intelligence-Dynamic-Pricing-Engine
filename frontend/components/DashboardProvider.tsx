@@ -19,6 +19,7 @@ type DashboardContextValue = {
   lastScan: ScanResponse | null;
   error: string | null;
   loading: boolean;
+  streamConnected: boolean;
   refresh: () => Promise<void>;
   updateAutopilotSettings: (settings: AutopilotSettings) => Promise<void>;
   setLastScanResult: (scan: ScanResponse | null) => void;
@@ -32,6 +33,7 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
   const [lastScan, setLastScan] = useState<ScanResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [streamConnected, setStreamConnected] = useState(false);
   const { notify } = useToast();
 
   const refresh = useCallback(async () => {
@@ -75,12 +77,20 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const source = new EventSource(`${apiBase()}/logs/stream`);
     source.onmessage = (event: MessageEvent<string>) => {
+      setStreamConnected(true);
       const parsed = JSON.parse(event.data) as { message: string };
       setState((current) => ({ ...current, logs: [...current.logs, parsed.message].slice(-120) }));
       void refresh();
     };
-    source.onerror = () => setError("Live log stream disconnected. Retrying automatically.");
-    return () => source.close();
+    source.onopen = () => setStreamConnected(true);
+    source.onerror = () => {
+      setStreamConnected(false);
+      setError("Live log stream disconnected. Retrying automatically.");
+    };
+    return () => {
+      setStreamConnected(false);
+      source.close();
+    };
   }, [refresh]);
 
   const value = useMemo(
@@ -90,11 +100,12 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
       lastScan,
       error,
       loading,
+      streamConnected,
       refresh,
       updateAutopilotSettings,
       setLastScanResult: setLastScan
     }),
-    [state, summary, lastScan, error, loading, refresh, updateAutopilotSettings]
+    [state, summary, lastScan, error, loading, streamConnected, refresh, updateAutopilotSettings]
   );
 
   return <DashboardContext.Provider value={value}>{children}</DashboardContext.Provider>;

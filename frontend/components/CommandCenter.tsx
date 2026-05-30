@@ -13,6 +13,7 @@ import { ProductOnboarding } from "@/components/ProductOnboarding";
 import { ScanHistoryPanel } from "@/components/ScanHistoryPanel";
 import { ScanPanel } from "@/components/ScanPanel";
 import { SubmissionChecklist } from "@/components/SubmissionChecklist";
+import { SystemStatusPanel } from "@/components/SystemStatusPanel";
 import { useDashboard } from "@/components/DashboardProvider";
 import { ErrorPanel, LoadingLabel, SkeletonBlock } from "@/components/ui";
 import type { ChartPoint, ScanResponse } from "@/lib/types";
@@ -33,7 +34,7 @@ const titles: Record<View, { title: string; eyebrow: string }> = {
 };
 
 export function CommandCenter({ view }: Props) {
-  const { state, summary, lastScan, error, loading, refresh, updateAutopilotSettings, setLastScanResult } = useDashboard();
+  const { state, summary, lastScan, error, loading, streamConnected, refresh, updateAutopilotSettings, setLastScanResult } = useDashboard();
   const [query, setQuery] = useState("");
 
   const chartData = useMemo<ChartPoint[]>(
@@ -64,7 +65,7 @@ export function CommandCenter({ view }: Props) {
   return (
     <div>
       <AutopilotControls settings={state.settings} onChange={(next) => void updateAutopilotSettings(next)} />
-      <div className="mx-auto grid w-full max-w-[1600px] gap-5 px-4 py-5 sm:px-5 lg:px-8 xl:grid-cols-[minmax(0,1fr)_360px]">
+      <div className="mx-auto grid w-full max-w-[1600px] gap-5 px-4 py-5 sm:px-5 lg:px-8 xl:grid-cols-[minmax(0,1fr)_minmax(320px,380px)]">
         <div className="min-w-0 space-y-5">
           <section className="flex flex-col gap-3 rounded-2xl border border-white/70 bg-white/70 p-4 shadow-sm backdrop-blur md:flex-row md:items-center md:justify-between">
             <div>
@@ -144,7 +145,17 @@ export function CommandCenter({ view }: Props) {
           {view === "readiness" ? <SubmissionChecklist expanded /> : null}
         </div>
 
-        <LogStream logs={state.logs} />
+        <div className="min-w-0 space-y-5 xl:sticky xl:top-5 xl:self-start">
+          <SystemStatusPanel
+            loading={loading}
+            error={error}
+            streamConnected={streamConnected}
+            productCount={state.products.length}
+            logCount={state.logs.length}
+            onRetry={() => void refresh()}
+          />
+          <LogStream logs={state.logs} streamConnected={streamConnected} />
+        </div>
       </div>
     </div>
   );
