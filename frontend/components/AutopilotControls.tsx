@@ -12,24 +12,24 @@ export function AutopilotControls({ settings, onChange }: Props) {
   const percent = Math.round(settings.minimum_margin_rate * 100);
 
   return (
-    <section className="grid gap-5 border-b border-white/70 bg-white/80 px-16 py-5 shadow-sm backdrop-blur md:grid-cols-[1fr_1.2fr] md:px-8">
-      <div className="flex items-center justify-between gap-4">
-        <div>
+    <section className="grid gap-5 border-b border-white/70 bg-white/80 px-5 pb-5 pt-16 shadow-sm backdrop-blur md:grid-cols-[1fr_1.2fr] md:px-8 md:pt-5">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="min-w-0">
           <p className="text-xs font-semibold uppercase tracking-wide text-ink/55">Control Plane</p>
-          <h1 className="mt-1 text-2xl font-semibold md:text-4xl">Autopilot Mode</h1>
+          <h1 className="mt-1 text-2xl font-semibold tracking-tight md:text-4xl">Autopilot Mode</h1>
         </div>
         <button
           type="button"
           aria-pressed={settings.autopilot}
           title="Toggle autopilot"
           onClick={() => onChange({ ...settings, autopilot: !settings.autopilot })}
-          className={`flex h-16 w-32 items-center rounded-full border p-2 transition ${
+          className={`flex h-14 w-28 shrink-0 items-center rounded-full border p-1.5 transition-colors duration-200 ${
             settings.autopilot ? "border-fern bg-fern" : "border-ink/20 bg-mist"
           }`}
         >
           <span
-            className={`grid h-12 w-12 place-items-center rounded-full bg-white shadow transition ${
-              settings.autopilot ? "translate-x-16 text-fern" : "translate-x-0 text-ink/50"
+            className={`grid h-11 w-11 place-items-center rounded-full bg-white shadow transition-transform duration-200 ease-out ${
+              settings.autopilot ? "translate-x-14 text-fern" : "translate-x-0 text-ink/50"
             }`}
           >
             <Power size={24} />

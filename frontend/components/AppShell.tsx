@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { motion } from "framer-motion";
+import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { Activity, AlertTriangle, Boxes, ChevronLeft, ChevronRight, Circle, Crosshair, FileCheck2, Gauge, Menu, X } from "lucide-react";
 import { useState } from "react";
 
@@ -19,6 +19,7 @@ export function AppShell({ children }: Readonly<{ children: React.ReactNode }>) 
   const pathname = usePathname();
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const reduceMotion = useReducedMotion();
 
   const nav = (
     <nav className="mt-6 space-y-1" aria-label="Primary navigation">
@@ -54,27 +55,41 @@ export function AppShell({ children }: Readonly<{ children: React.ReactNode }>) 
         <Menu size={20} />
       </button>
 
-      {mobileOpen ? (
-        <div className="fixed inset-0 z-50 bg-ink/35 backdrop-blur-sm md:hidden">
-          <motion.aside
-            initial={{ x: -280 }}
-            animate={{ x: 0 }}
-            exit={{ x: -280 }}
-            className="h-full w-72 bg-ink px-4 py-4 text-white shadow-2xl"
+      <AnimatePresence>
+        {mobileOpen ? (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 bg-ink/35 p-3 backdrop-blur-md md:hidden"
           >
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs font-semibold uppercase text-white/45">Pricing Ops</p>
-                <p className="text-lg font-semibold">Command Center</p>
+            <motion.aside
+              initial={reduceMotion ? { opacity: 1 } : { opacity: 0, scale: 0.97, y: -8 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={reduceMotion ? { opacity: 0 } : { opacity: 0, scale: 0.98, y: -8 }}
+              transition={{ duration: 0.18, ease: "easeOut" }}
+              className="mx-auto max-h-[calc(100vh-1.5rem)] w-full max-w-sm overflow-y-auto rounded-2xl border border-white/10 bg-ink px-4 py-4 text-white shadow-2xl"
+            >
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-xs font-semibold uppercase text-white/45">Pricing Ops</p>
+                  <p className="text-lg font-semibold">Command Center</p>
+                </div>
+                <button type="button" aria-label="Close navigation" onClick={() => setMobileOpen(false)} className="grid h-9 w-9 place-items-center rounded-md bg-white/10">
+                  <X size={18} />
+                </button>
               </div>
-              <button type="button" onClick={() => setMobileOpen(false)} className="grid h-9 w-9 place-items-center rounded-md bg-white/10">
-                <X size={18} />
-              </button>
-            </div>
-            {nav}
-          </motion.aside>
-        </div>
-      ) : null}
+              {nav}
+              <div className="mt-5 rounded-xl border border-white/10 bg-white/10 p-3">
+                <div className="flex items-center gap-2 text-xs font-semibold text-white/80">
+                  <Circle size={9} className="fill-fern text-fern" />
+                  Systems online
+                </div>
+              </div>
+            </motion.aside>
+          </motion.div>
+        ) : null}
+      </AnimatePresence>
 
       <aside
         className={`fixed inset-y-0 left-0 z-30 hidden bg-ink px-3 py-5 text-white transition-all md:block ${
@@ -119,8 +134,13 @@ export function AppShell({ children }: Readonly<{ children: React.ReactNode }>) 
         </div>
       </aside>
 
-      <div className={`transition-all ${collapsed ? "md:pl-20" : "md:pl-72"}`}>
-        <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.28 }}>
+      <div className={`transition-[padding] duration-200 ease-out ${collapsed ? "md:pl-20" : "md:pl-72"}`}>
+        <motion.div
+          key={pathname}
+          initial={reduceMotion ? { opacity: 1 } : { opacity: 0, scale: 0.995, filter: "blur(4px)" }}
+          animate={{ opacity: 1, scale: 1, filter: "blur(0px)" }}
+          transition={{ duration: 0.16, ease: "easeOut" }}
+        >
           {children}
         </motion.div>
       </div>

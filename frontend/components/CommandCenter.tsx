@@ -114,7 +114,7 @@ export function CommandCenter({ view }: Props) {
   return (
     <main>
       {controls}
-      <div className="grid gap-5 px-5 py-5 pt-20 md:px-8 md:pt-5 xl:grid-cols-[1fr_360px]">
+      <div className="grid gap-5 px-4 py-5 md:px-8 xl:grid-cols-[minmax(0,1fr)_360px]">
         <div className="space-y-5">
           <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
             <p className="text-sm text-ink/65">
@@ -125,7 +125,7 @@ export function CommandCenter({ view }: Props) {
                   }`}
             </p>
             <div className="flex gap-2">
-              <label className="flex h-10 min-w-0 flex-1 border border-ink/15 bg-white md:w-80">
+              <label className="flex h-10 min-w-0 flex-1 rounded-lg border border-ink/10 bg-white/80 shadow-sm md:w-80">
                 <span className="grid w-10 place-items-center text-ink/50">
                   <Search size={17} />
                 </span>
@@ -133,14 +133,14 @@ export function CommandCenter({ view }: Props) {
                   value={query}
                   onChange={(event) => setQuery(event.currentTarget.value)}
                   placeholder="Search catalog"
-                  className="min-w-0 flex-1 px-1 outline-none"
+                  className="min-w-0 flex-1 bg-transparent px-1 outline-none"
                 />
               </label>
               <button
                 type="button"
                 title="Refresh dashboard"
                 onClick={() => void refresh()}
-                className="grid h-10 w-10 place-items-center border border-ink/15 bg-white text-ink transition hover:bg-mist"
+                className="grid h-10 w-10 place-items-center rounded-lg border border-ink/10 bg-white/80 text-ink shadow-sm transition hover:bg-white"
               >
                 <RefreshCcw size={18} />
               </button>
